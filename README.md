@@ -237,6 +237,7 @@ npm run measure       # Core Web Vitals com throttling de celular
 
 npm run checklist     # o que ainda falta configurar
 npm run shots         # capturas de tela de todas as páginas
+npm run preview:paths # cópia com caminhos relativos, para hospedar sob prefixo
 npm run fonts         # regenera as fontes subsetadas (requer Python)
 npm run assets        # regenera ícones e imagens sociais
 ```
@@ -270,6 +271,27 @@ contraste, rótulo ausente, ordem de títulos e ARIA inválido. Ela **não** jul
 se um texto alternativo é bom, se a ordem de foco faz sentido para a tarefa,
 nem se a linguagem é compreensível. Isso continua exigindo revisão humana e
 teste com leitor de tela real.
+
+### `npm run preview:paths` — hospedar sob um prefixo de caminho
+
+O site de produção usa caminhos absolutos (`/assets/...`, `/servicos/`). É o
+correto para um domínio próprio: caminho absoluto é imune à profundidade da
+página.
+
+Mas um ambiente de **pré-visualização** costuma servir o site sob um prefixo
+(`/preview/abc123/`). Ali o caminho absoluto sai do prefixo e bate na raiz do
+host — 404 em todo CSS, JS e fonte, e a página aparece só com texto e links.
+
+`npm run preview:paths` gera `dist-preview/` com todos os caminhos internos
+reescritos para relativos, calculados pela profundidade de cada página. Dois
+detalhes que esse script cobre e que é fácil esquecer:
+
+- o `@font-face` **dentro do CSS** também aponta para `/fonts/...` e precisa
+  do mesmo tratamento
+- diretórios viram `index.html` explícito, para não depender de o host
+  resolver índice de diretório
+
+`dist/` (produção) não é alterado.
 
 ### `npm run interactions` — o que só quebra em uso
 

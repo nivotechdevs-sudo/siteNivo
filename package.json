@@ -12,6 +12,7 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "preview:paths": "astro build && node tools/preview-build.mjs",
     "check": "astro check",
     "audit": "node tools/audit.mjs",
     "a11y": "node tools/a11y.mjs",
