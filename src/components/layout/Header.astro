@@ -1,0 +1,243 @@
+---
+/**
+ * Cabeçalho fixo.
+ *
+ * Decisões que importam para conversão e acessibilidade:
+ *  - CTA de WhatsApp sempre visível, inclusive no mobile. A ação principal
+ *    nunca fica escondida atrás do menu sanduíche.
+ *  - O item ativo é marcado com `aria-current="page"`, não só com cor. Cor
+ *    sozinha não é informação acessível.
+ *  - O fundo só aparece depois de rolar, controlado por IntersectionObserver
+ *    (ver app.ts) — nenhum listener de scroll na thread principal.
+ */
+import Logo from '../ui/Logo.astro';
+import Button from '../ui/Button.astro';
+import ThemeToggle from '../ui/ThemeToggle.astro';
+import Icon from '../ui/Icon.astro';
+import { NAV, whatsappUrl, CONTACT } from '../../data/site';
+
+const path = Astro.url.pathname;
+
+/** Ativo também nas filhas: /servicos/landing-pages/ acende "Serviços". */
+const isActive = (href: string): boolean =>
+  href === '/' ? path === '/' : path.startsWith(href);
+---
+
+<header
+  id="site-header"
+  data-scrolled="false"
+  data-print-hide
+  class="group/header fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-300 ease-[var(--ease-out-quint)] border-b border-transparent data-[scrolled=true]:border-line data-[scrolled=true]:bg-canvas/80 data-[scrolled=true]:backdrop-blur-xl"
+>
+  <div class="container-site">
+    <div class="flex h-16 items-center justify-between gap-4 lg:h-[4.5rem]">
+      <a
+        href="/"
+        class="rounded-md transition-opacity hover:opacity-80"
+        aria-label="NivoTech — página inicial"
+      >
+        <Logo />
+      </a>
+
+      {/* --- Navegação desktop --- */}
+      <nav aria-label="Navegação principal" class="hidden lg:block">
+        <ul role="list" class="flex items-center gap-1">
+          {
+            NAV.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
+                  class="relative inline-flex h-9 items-center rounded-md px-3 text-[0.9375rem] font-medium text-ink-2 transition-colors hover:text-ink aria-[current=page]:text-ink"
+                >
+                  {item.label}
+                  {/* Marca visual do item ativo e do hover. `aria-current` já
+                      informa o leitor de tela; isto é o equivalente para quem
+                      enxerga. Anima `scaleX`, não `width`: sem reflow. */}
+                  <span aria-hidden="true" class="nav-mark" />
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      {/* --- Ações --- */}
+      <div class="flex items-center gap-2">
+        <div class="hidden sm:block">
+          <ThemeToggle />
+        </div>
+
+        <Button
+          href={whatsappUrl()}
+          external
+          variant="primary"
+          icon="whatsapp"
+          class="hidden sm:inline-flex"
+          dataCta="header-whatsapp"
+        >
+          Falar no WhatsApp
+        </Button>
+
+        {/* No mobile o CTA vira só o ícone: mantém a ação principal
+            acessível sem espremer o cabeçalho. */}
+        <Button
+          href={whatsappUrl()}
+          external
+          variant="primary"
+          icon="whatsapp"
+          class="sm:hidden !px-3"
+          ariaLabel={`Falar com a NivoTech no WhatsApp — ${CONTACT.whatsappDisplay}`}
+          dataCta="header-whatsapp-mobile"
+        />
+
+        <button
+          type="button"
+          id="menu-toggle"
+          aria-expanded="false"
+          aria-controls="mobile-menu"
+          class="grid size-10 place-items-center rounded-md border border-line text-ink transition-colors hover:border-line-strong lg:hidden"
+        >
+          <span class="sr-only">Abrir menu de navegação</span>
+          {/* Sanduíche que vira X. As três barras são as mesmas em ambos os
+              estados — só mudam de posição e rotação, e ambas são transform,
+              ou seja, animação de compositor. */}
+          <span aria-hidden="true" class="burger">
+            <span class="burger__bar"></span>
+            <span class="burger__bar"></span>
+            <span class="burger__bar"></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {/* --- Painel mobile ---
+      `inert` quando fechado (aplicado pelo app.ts) tira o painel da ordem de
+      foco e da árvore de acessibilidade. Esconder só com opacity deixaria os
+      links tabuláveis e o leitor de tela lendo um menu invisível. */}
+  <div
+    id="mobile-menu"
+    data-open="false"
+    class="fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto overscroll-contain border-t border-line bg-canvas px-5 pb-10 pt-6 transition-[opacity,transform] duration-300 ease-[var(--ease-out-expo)] data-[open=false]:pointer-events-none data-[open=false]:-translate-y-2 data-[open=false]:opacity-0 data-[open=true]:translate-y-0 data-[open=true]:opacity-100 lg:hidden"
+  >
+    <nav aria-label="Navegação principal (mobile)">
+      <ul role="list" class="flex flex-col gap-1">
+        {
+          NAV.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                aria-current={isActive(item.href) ? 'page' : undefined}
+                class="flex flex-col gap-0.5 rounded-lg px-4 py-3.5 transition-colors hover:bg-surface-2 aria-[current=page]:bg-surface-2"
+              >
+                <span class="font-display text-lg font-600 tracking-[-0.02em] text-ink">
+                  {item.label}
+                </span>
+                {item.description && (
+                  <span class="text-sm text-ink-3">{item.description}</span>
+                )}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="mt-6 flex flex-col gap-3 border-t border-line pt-6">
+      <Button
+        href="/contato/"
+        variant="secondary"
+        size="lg"
+        icon="arrow-right"
+        class="w-full"
+        dataCta="mobile-menu-briefing"
+      >
+        Solicitar orçamento
+      </Button>
+      <Button
+        href={whatsappUrl()}
+        external
+        variant="primary"
+        size="lg"
+        icon="whatsapp"
+        class="w-full"
+        dataCta="mobile-menu-whatsapp"
+      >
+        Falar no WhatsApp
+      </Button>
+    </div>
+
+    <div class="mt-6 flex items-center justify-between border-t border-line pt-6">
+      <span class="text-sm text-ink-3">Tema</span>
+      <ThemeToggle />
+    </div>
+
+    <p class="mt-6 flex items-center gap-2 text-sm text-ink-3">
+      <Icon name="mail" size={16} />
+      <a href={`mailto:${CONTACT.email}`} class="link-underline">{CONTACT.email}</a>
+    </p>
+  </div>
+</header>
+
+{/* Espaçador: o cabeçalho é `fixed`, então ele sai do fluxo. Sem este bloco,
+    o conteúdo nasceria por baixo dele. Reservar a altura aqui é o que evita
+    deslocamento de layout no carregamento. */}
+<div aria-hidden="true" class="h-16 lg:h-[4.5rem]"></div>
+
+<style>
+  /* O estado vem do próprio `aria-expanded` do botão: uma fonte de verdade
+     só, já acessível, sem classe paralela para manter em sincronia. */
+  .burger {
+    position: relative;
+    display: block;
+    width: 1.25rem;
+    height: 0.875rem;
+  }
+
+  .burger__bar {
+    position: absolute;
+    left: 0;
+    height: 1.5px;
+    width: 100%;
+    border-radius: 999px;
+    background-color: currentColor;
+    transition:
+      transform 300ms var(--ease-out-expo),
+      opacity 180ms var(--ease-out-quint);
+  }
+
+  .burger__bar:nth-child(1) { top: 0; }
+  .burger__bar:nth-child(2) { top: 6.25px; }
+  .burger__bar:nth-child(3) { bottom: 0; }
+
+  [aria-expanded='true'] .burger__bar:nth-child(1) {
+    transform: translateY(6.25px) rotate(45deg);
+  }
+
+  [aria-expanded='true'] .burger__bar:nth-child(2) {
+    opacity: 0;
+  }
+
+  [aria-expanded='true'] .burger__bar:nth-child(3) {
+    transform: translateY(-6.25px) rotate(-45deg);
+  }
+
+  /* Indicador do item de navegação. */
+  .nav-mark {
+    position: absolute;
+    inset-inline: 0.75rem;
+    bottom: -1px;
+    height: 1.5px;
+    background-color: var(--c-brand);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 320ms var(--ease-out-expo);
+  }
+
+  a:hover > .nav-mark,
+  a:focus-visible > .nav-mark,
+  a[aria-current='page'] > .nav-mark {
+    transform: scaleX(1);
+  }
+</style>

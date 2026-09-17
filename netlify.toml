@@ -1,0 +1,48 @@
+# Configuração do Netlify.
+# Os cabeçalhos HTTP ficam em public/_headers, que o Netlify lê
+# automaticamente — mantidos lá para servirem também ao Cloudflare Pages.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Gera um preview em cada pull request, com a mesma configuração da produção.
+[context.deploy-preview]
+  command = "npm run build"
+
+# ---------------------------------------------------------------------------
+# REDIRECIONAMENTOS DO SITE ANTIGO
+# ---------------------------------------------------------------------------
+# Este é o passo que a maioria das migrações pula — e é o que faz empresas
+# perderem tráfego orgânico da noite para o dia. Toda URL do site antigo que
+# já recebia visita precisa de um 301 para o endereço novo.
+#
+# COMO LEVANTAR A LISTA (antes de trocar o site):
+#   1. Search Console > Desempenho > Páginas: exporte as URLs com cliques
+#   2. Analytics > Páginas de destino: exporte as mais acessadas
+#   3. Rode um rastreador (Screaming Frog) no site atual para pegar o resto
+#
+# Depois adicione uma linha por URL. Exemplos:
+#
+# [[redirects]]
+#   from = "/servicos-de-criacao-de-sites"
+#   to = "/servicos/criacao-de-sites/"
+#   status = 301
+#   force = true
+#
+# [[redirects]]
+#   from = "/quem-somos"
+#   to = "/sobre/"
+#   status = 301
+#   force = true
+
+# Fallback: qualquer rota não encontrada recebe a página 404 com status 404
+# de verdade. Devolver 200 numa página de erro cria "soft 404" e o Google
+# acaba indexando páginas de erro.
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404

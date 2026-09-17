@@ -1,0 +1,88 @@
+---
+/**
+ * Botão / link de ação.
+ *
+ * Decide sozinho entre <a> e <button> a partir da presença de `href`. Isso
+ * não é detalhe: link que navega precisa ser <a> (abre em nova aba, é
+ * rastreável, funciona sem JS) e ação que não navega precisa ser <button>
+ * (responde a Espaço além de Enter). Trocar os dois é o erro de
+ * acessibilidade mais comum em sites de agência.
+ */
+import Icon from './Icon.astro';
+
+export interface Props {
+  href?: string;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'signal';
+  size?: 'md' | 'lg';
+  /** Ícone à direita do texto. */
+  icon?: 'arrow-right' | 'arrow-up-right' | 'whatsapp' | 'mail' | 'check';
+  /** Link externo: adiciona rel de segurança e target. */
+  external?: boolean;
+  type?: 'button' | 'submit';
+  class?: string;
+  id?: string;
+  /** Rótulo acessível quando o texto visível não basta. */
+  ariaLabel?: string;
+  /** Atributo de rastreio para eventos de conversão. */
+  dataCta?: string;
+}
+
+const {
+  href,
+  variant = 'primary',
+  size = 'md',
+  icon,
+  external = false,
+  type = 'button',
+  class: className = '',
+  id,
+  ariaLabel,
+  dataCta,
+} = Astro.props;
+
+const classes = [
+  'btn',
+  `btn--${variant}`,
+  size === 'lg' ? 'btn--lg' : '',
+  'group',
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+
+// `noopener` fecha o acesso de window.opener à aba de origem. `noreferrer`
+// evita vazar a URL de origem no cabeçalho Referer.
+const rel = external ? 'noopener noreferrer' : undefined;
+const target = external ? '_blank' : undefined;
+
+const Tag = href ? 'a' : 'button';
+---
+
+<Tag
+  href={href}
+  rel={rel}
+  target={target}
+  type={href ? undefined : type}
+  class={classes}
+  id={id}
+  aria-label={ariaLabel}
+  data-cta={dataCta}
+>
+  <slot />
+  {
+    icon && (
+      <Icon
+        name={icon}
+        size={17}
+        class={
+          icon === 'arrow-right'
+            ? 'transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1'
+            : icon === 'arrow-up-right'
+              ? 'transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5'
+              : ''
+        }
+      />
+    )
+  }
+  {external && <span class="sr-only">(abre em nova aba)</span>}
+</Tag>

@@ -1,0 +1,137 @@
+---
+/**
+ * Prova social — renderiza APENAS quando existe dado real.
+ *
+ * Esta é a decisão editorial mais importante do projeto, então fica
+ * registrada no código: não inventei depoimento, logo de cliente nem número
+ * de resultado. Depoimento fabricado é risco jurídico (Código de Defesa do
+ * Consumidor, art. 37: publicidade enganosa) e destrói a confiança no dia em
+ * que alguém pergunta "posso falar com esse cliente?".
+ *
+ * O componente checa `.length` e não renderiza nada quando os arrays de
+ * content.ts estão vazios. Assim o site sobe íntegro hoje, sem nenhum
+ * "Cliente Satisfeito — Lorem Ipsum", e a seção aparece sozinha no dia em
+ * que a NivoTech preencher os dados. Nenhuma alteração de código é
+ * necessária: é só preencher o array.
+ */
+import Section from '../ui/Section.astro';
+import SectionHeader from './SectionHeader.astro';
+import { DEPOIMENTOS, CLIENTES, METRICAS } from '../../data/content';
+
+const temDepoimentos = DEPOIMENTOS.length > 0;
+const temClientes = CLIENTES.length > 0;
+const temMetricas = METRICAS.length > 0;
+const temAlgo = temDepoimentos || temClientes || temMetricas;
+---
+
+{
+  temAlgo && (
+    <Section id="prova" labelledby="prova-titulo" divider>
+      <SectionHeader
+        id="prova-titulo"
+        eyebrow="Resultado"
+        title="O que os projetos entregaram"
+        align="center"
+      />
+
+      {/* ---- Métricas ---- */}
+      {temMetricas && (
+        <ul
+          role="list"
+          class="mx-auto mt-14 grid max-w-4xl gap-8 sm:grid-cols-3"
+          data-reveal-stagger
+        >
+          {METRICAS.map((m) => (
+            <li class="text-center">
+              {/* `data-count` faz o número animar de zero. O valor final já
+                  está no HTML, então quem não roda JS vê o número correto. */}
+              <p
+                class="tabular font-display text-display-lg text-brand"
+                data-count
+              >
+                {m.valor}
+              </p>
+              <p class="mt-2 font-600 text-ink">{m.rotulo}</p>
+              {/* Fonte sempre visível: número sem apuração é marketing vazio. */}
+              <p class="mt-1 text-[0.8125rem] text-ink-3">{m.fonte}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* ---- Depoimentos ---- */}
+      {temDepoimentos && (
+        <ul
+          role="list"
+          class="mt-16 grid gap-5 md:grid-cols-2 lg:grid-cols-3"
+          data-reveal-stagger
+        >
+          {DEPOIMENTOS.map((d) => (
+            <li class="card flex flex-col p-7">
+              <blockquote class="flex-1 text-[1.0625rem] leading-relaxed text-ink">
+                <p>“{d.texto}”</p>
+              </blockquote>
+              <figcaption class="mt-6 flex items-center gap-3 border-t border-line pt-5">
+                {d.foto ? (
+                  <img
+                    src={d.foto}
+                    alt=""
+                    width="40"
+                    height="40"
+                    loading="lazy"
+                    decoding="async"
+                    class="size-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    class="grid size-10 shrink-0 place-items-center rounded-full bg-brand-subtle font-display text-sm font-700 text-brand-subtle-ink"
+                  >
+                    {d.autor.charAt(0)}
+                  </span>
+                )}
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-600 text-ink">{d.autor}</p>
+                  <p class="truncate text-[0.8125rem] text-ink-3">
+                    {d.cargo} · {d.empresa}
+                  </p>
+                </div>
+              </figcaption>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* ---- Logos de clientes ---- */}
+      {temClientes && (
+        <div class="marquee mt-16 overflow-hidden mask-fade" data-reveal>
+          <p class="sr-only">Empresas atendidas pela NivoTech</p>
+          {/* A lista é duplicada para o loop do marquee ficar contínuo. A
+              cópia é `aria-hidden` para o leitor de tela não ler duas vezes. */}
+          <div class="marquee-track items-center gap-14">
+            {[0, 1].map((copy) => (
+              <ul
+                role="list"
+                class="flex shrink-0 items-center gap-14 pr-14"
+                aria-hidden={copy === 1 ? 'true' : undefined}
+              >
+                {CLIENTES.map((c) => (
+                  <li>
+                    <img
+                      src={c.logo}
+                      alt={copy === 0 ? c.nome : ''}
+                      height="28"
+                      loading="lazy"
+                      decoding="async"
+                      class="h-7 w-auto opacity-55 grayscale transition-[opacity,filter] duration-300 hover:opacity-100 hover:grayscale-0"
+                    />
+                  </li>
+                ))}
+              </ul>
+            ))}
+          </div>
+        </div>
+      )}
+    </Section>
+  )
+}

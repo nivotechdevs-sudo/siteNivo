@@ -1,0 +1,255 @@
+---
+/**
+ * Página de serviço (rota dinâmica).
+ *
+ * Uma rota gera todas as páginas de serviço a partir de `SERVICOS`. Não é só
+ * economia de código: garante que toda página de serviço tenha exatamente a
+ * mesma estrutura de SEO — title, description, breadcrumb, schema, links
+ * internos. Página criada na mão é onde o metadado some.
+ *
+ * Adicionar um serviço novo = adicionar um objeto em content.ts. A página, o
+ * sitemap, o schema e os links internos aparecem sozinhos.
+ */
+import type { GetStaticPaths } from 'astro';
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/sections/PageHero.astro';
+import Section from '../../components/ui/Section.astro';
+import SectionHeader from '../../components/sections/SectionHeader.astro';
+import Button from '../../components/ui/Button.astro';
+import Icon from '../../components/ui/Icon.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import Faq from '../../components/sections/Faq.astro';
+
+import { SERVICOS, METODO, FAQ } from '../../data/content';
+import { whatsappUrl, cityLabel, LOCATION } from '../../data/site';
+import { webPage, breadcrumbList, service, faqPage } from '../../lib/schema';
+
+export const getStaticPaths = (() =>
+  SERVICOS.map((servico) => ({
+    params: { slug: servico.slug },
+    props: { servico },
+  }))) satisfies GetStaticPaths;
+
+const { servico } = Astro.props;
+
+const path = `/servicos/${servico.slug}/`;
+
+const crumbs = [
+  { name: 'Início', url: '/' },
+  { name: 'Serviços', url: '/servicos/' },
+  { name: servico.nome, url: path },
+];
+
+// Link lateral para o serviço irmão: mantém quem não encontrou o que
+// procurava dentro do site em vez de mandá-lo de volta ao Google.
+const outros = SERVICOS.filter((s) => s.slug !== servico.slug);
+
+// Quatro perguntas por página de serviço. Repetir o FAQ inteiro em todas
+// criaria conteúdo duplicado entre páginas — exatamente o que evitamos.
+const faqServico = FAQ.slice(0, 4);
+
+const schemas = [
+  webPage({
+    url: path,
+    title: servico.titulo,
+    description: servico.metaDescription,
+    breadcrumb: crumbs,
+  }),
+  breadcrumbList(path, crumbs),
+  service({
+    name: servico.nome,
+    description: servico.promessa,
+    url: path,
+    serviceType: servico.keywordPrimaria,
+  }),
+  faqPage(path, faqServico),
+];
+---
+
+<BaseLayout
+  title={servico.titulo}
+  description={servico.metaDescription}
+  path={path}
+  image={`/og/${servico.slug}.png`}
+  schemas={schemas}
+>
+  <PageHero
+    eyebrow={servico.nome}
+    title={servico.titulo}
+    lead={servico.promessa}
+    breadcrumbs={crumbs}
+    seed={servico.slug.length + 5}
+  >
+    <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+      <Button
+        href={whatsappUrl(`Olá! Quero falar sobre ${servico.nome.toLowerCase()}.`)}
+        external
+        variant="primary"
+        size="lg"
+        icon="whatsapp"
+        dataCta={`servico-${servico.slug}-whatsapp`}
+      >
+        Falar no WhatsApp
+      </Button>
+      <Button
+        href="/contato/"
+        variant="secondary"
+        size="lg"
+        icon="arrow-right"
+        dataCta={`servico-${servico.slug}-briefing`}
+      >
+        Enviar briefing
+      </Button>
+    </div>
+  </PageHero>
+
+  {/* ---- Contexto ---- */}
+  <Section>
+    <div class="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+      <div>
+        <h2 class="text-display-lg text-balance" data-reveal>
+          O que está por trás desse trabalho
+        </h2>
+        <p class="mt-6 text-lead text-ink-2 text-pretty" data-reveal>
+          {servico.intro}
+        </p>
+      </div>
+
+      <div class="card p-7 sm:p-8" data-reveal>
+        <h3 class="font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+          Para quem é
+        </h3>
+        <ul role="list" class="mt-5 flex flex-col gap-3.5">
+          {
+            servico.paraQuem.map((item) => (
+              <li class="flex items-start gap-3 text-[0.9375rem] leading-relaxed text-ink-2">
+                <Icon name="check" size={16} class="mt-1 shrink-0 text-brand" />
+                <span>{item}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </Section>
+
+  {/* ---- Entregáveis ---- */}
+  <Section surface="surface-2" divider>
+    <SectionHeader
+      eyebrow="Escopo"
+      title="O que você recebe"
+      lead="Escopo fechado e por escrito antes do início. Nada aqui é “conforme a necessidade”."
+    />
+
+    <ul role="list" class="mt-12 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2" data-reveal-stagger>
+      {
+        servico.entregaveis.map((item, i) => (
+          <li class="flex items-start gap-4 bg-surface p-6">
+            <span
+              aria-hidden="true"
+              class="tabular mt-0.5 font-display text-[0.8125rem] font-700 text-ink-3"
+            >
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <span class="text-[0.9375rem] leading-relaxed text-ink-2">{item}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  {/* ---- Método resumido ---- */}
+  <Section>
+    <SectionHeader
+      eyebrow="Como funciona"
+      title="As seis etapas do projeto"
+      lead="O mesmo processo para todo projeto, do menor ao maior. Previsibilidade é o que permite prometer prazo com honestidade."
+    />
+
+    <ol role="list" class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-reveal-stagger>
+      {
+        METODO.map((etapa) => (
+          <li class="card relative flex flex-col p-6">
+            <span
+              aria-hidden="true"
+              class="tabular font-display text-[0.75rem] font-700 tracking-[0.1em] text-brand"
+            >
+              {etapa.numero}
+            </span>
+            <h3 class="mt-3 font-display text-[1.0625rem] font-600 text-ink">
+              {etapa.titulo}
+            </h3>
+            <p class="mt-2 text-[0.9375rem] leading-relaxed text-ink-2">
+              {etapa.resumo}
+            </p>
+          </li>
+        ))
+      }
+    </ol>
+
+    <div class="mt-10" data-reveal>
+      <Button href="/metodo/" variant="secondary" icon="arrow-right">
+        Ver o método em detalhe
+      </Button>
+    </div>
+  </Section>
+
+  {/* ---- SEO local ----
+      Bloco curto e honesto: declara a cidade-base e o alcance real, sem
+      encher a página de nomes de cidade (isso é doorway page e o Google
+      penaliza). O sinal local vem do schema e da consistência, não de
+      repetição. */}
+  <Section surface="surface-2" divider spacing="sm">
+    <div class="max-w-2xl" data-reveal>
+      <h2 class="text-display-md text-balance">
+        {servico.nome} em {cityLabel()} e em todo o {LOCATION.areaServed}
+      </h2>
+      <p class="mt-4 text-[1.0625rem] leading-relaxed text-ink-2 text-pretty">
+        Somos de {cityLabel()} e atendemos empresas de {LOCATION.areaServed}{' '}
+        com processo 100% remoto: reuniões por vídeo, acompanhamento do projeto
+        em ambiente online e comunicação registrada por escrito. Na prática, a
+        distância deixou de ser variável há bastante tempo — o que decide um
+        projeto é clareza de processo e frequência de contato.
+      </p>
+    </div>
+  </Section>
+
+  <Faq
+    items={faqServico}
+    title="Dúvidas sobre este serviço"
+    lead="As perguntas que mais aparecem antes de fechar. Se a sua não estiver aqui, mande no WhatsApp."
+  />
+
+  {/* ---- Outros serviços ---- */}
+  {
+    outros.length > 0 && (
+      <Section surface="surface-2" divider spacing="sm">
+        <h2 class="text-display-md" data-reveal>Talvez seja isto que você procura</h2>
+        <div class="mt-8 grid gap-5 sm:grid-cols-2" data-reveal-stagger>
+          {outros.map((outro) => (
+            <article class="card card--interactive spotlight group relative p-7">
+              <h3 class="font-display text-display-sm text-ink">
+                <a
+                  href={`/servicos/${outro.slug}/`}
+                  class="after:absolute after:inset-0 after:content-['']"
+                >
+                  {outro.nome}
+                </a>
+              </h3>
+              <p class="mt-3 text-[0.9375rem] leading-relaxed text-ink-2">
+                {outro.promessa}
+              </p>
+            </article>
+          ))}
+        </div>
+      </Section>
+    )
+  }
+
+  <Section>
+    <CtaBand
+      whatsappMessage={`Olá! Vi a página de ${servico.nome.toLowerCase()} e quero conversar sobre um projeto.`}
+    />
+  </Section>
+</BaseLayout>

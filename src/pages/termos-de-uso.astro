@@ -1,0 +1,126 @@
+---
+/**
+ * Termos de uso.
+ *
+ * AVISO: assim como a política de privacidade, este é um ponto de partida
+ * honesto sobre o funcionamento do site, não parecer jurídico. Precisa de
+ * razão social, CNPJ e revisão por advogado antes de publicar — sobretudo a
+ * cláusula de limitação de responsabilidade, cuja validade depende do caso
+ * concreto e da relação (consumo ou empresarial).
+ */
+import LegalLayout from '../layouts/LegalLayout.astro';
+import { SITE, CONTACT } from '../data/site';
+---
+
+<LegalLayout
+  title="Termos de uso"
+  description="Condições de uso do site da NivoTech: finalidade, propriedade intelectual, uso adequado, disponibilidade e limitação de responsabilidade."
+  path="/termos-de-uso/"
+  updatedAt="2026-09-17"
+>
+  <p>
+    Estes termos regem o uso do site {SITE.url.replace('https://', '')}. Ao
+    navegar por ele, você concorda com as condições abaixo.
+  </p>
+
+  <h2>Quem opera este site</h2>
+  <p>
+    {/* TODO: preencher razão social e CNPJ. */}
+    Este site é operado por <strong>{SITE.legalName}</strong>, CNPJ
+    <strong> [PREENCHER CNPJ]</strong>. Contato:{' '}
+    <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>.
+  </p>
+
+  <h2>Finalidade do site</h2>
+  <p>
+    Este site é institucional: apresenta os serviços da {SITE.name} e oferece
+    canais de contato. Ele não realiza vendas nem processa pagamentos.
+    Qualquer contratação de serviço é formalizada em proposta e contrato
+    específicos, à parte deste site.
+  </p>
+
+  <h2>Conteúdo informativo</h2>
+  <p>
+    Os textos publicados aqui, inclusive os artigos do blog, têm caráter
+    informativo. São escritos com cuidado e baseados na nossa prática, mas não
+    constituem consultoria técnica, jurídica ou financeira para o seu caso
+    específico. Decisões tomadas com base neles são de responsabilidade de
+    quem as toma.
+  </p>
+  <p>
+    Referências a ferramentas, limites e métricas de terceiros — como os
+    parâmetros de Core Web Vitals do Google — refletem o que é público na data
+    de publicação e podem mudar sem aviso.
+  </p>
+
+  <h2>Propriedade intelectual</h2>
+  <p>
+    A marca {SITE.name}, o logotipo, a identidade visual, os textos e o código
+    deste site são de titularidade da {SITE.legalName}, protegidos pela Lei
+    9.610/1998 e pela Lei 9.279/1996.
+  </p>
+  <p>
+    Você pode citar trechos dos artigos para fins informativos, desde que
+    identifique a fonte e inclua link para a página original. A reprodução
+    integral de conteúdo, o uso da marca ou a cópia da identidade visual
+    dependem de autorização prévia por escrito.
+  </p>
+
+  <h2>Uso adequado</h2>
+  <p>Ao usar este site, você se compromete a não:</p>
+  <ul>
+    <li>Tentar obter acesso não autorizado a sistemas ou dados</li>
+    <li>
+      Usar os formulários para enviar conteúdo ilícito, ofensivo, spam ou
+      material publicitário não solicitado
+    </li>
+    <li>Empregar meios automatizados que sobrecarreguem a infraestrutura</li>
+    <li>
+      Extrair conteúdo de forma sistemática para reprodução sem autorização
+    </li>
+  </ul>
+
+  <h2>Links para outros sites</h2>
+  <p>
+    Este site pode conter links para páginas de terceiros. Eles são oferecidos
+    por conveniência e não implicam endosso. Não temos controle sobre o
+    conteúdo, as práticas de privacidade ou a disponibilidade desses sites.
+  </p>
+
+  <h2>Disponibilidade</h2>
+  <p>
+    Trabalhamos para manter o site disponível e funcionando, mas não garantimos
+    funcionamento ininterrupto. Pode haver indisponibilidade por manutenção,
+    atualização ou falha de infraestrutura de terceiros.
+  </p>
+
+  <h2>Limitação de responsabilidade</h2>
+  <p>
+    Nos limites permitidos pela legislação aplicável, a {SITE.legalName} não
+    responde por danos indiretos decorrentes do uso ou da impossibilidade de
+    uso deste site. Esta limitação não afasta direitos previstos no Código de
+    Defesa do Consumidor quando ele for aplicável à relação.
+  </p>
+
+  <h2>Privacidade</h2>
+  <p>
+    O tratamento de dados pessoais é descrito na{' '}
+    <a href="/politica-de-privacidade/">política de privacidade</a>, que
+    integra estes termos.
+  </p>
+
+  <h2>Alterações</h2>
+  <p>
+    Estes termos podem ser atualizados a qualquer momento. A data da última
+    atualização fica no topo da página, e a versão vigente é sempre a
+    publicada aqui.
+  </p>
+
+  <h2>Lei aplicável e foro</h2>
+  <p>
+    Estes termos são regidos pelas leis brasileiras. Fica eleito o foro da
+    comarca da sede da {SITE.legalName} para dirimir controvérsias, com
+    renúncia a qualquer outro, ressalvadas as hipóteses de competência legal
+    obrigatória.
+  </p>
+</LegalLayout>

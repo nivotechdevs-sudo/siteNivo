@@ -1,0 +1,50 @@
+---
+/**
+ * Diferenciais — o "por que a gente".
+ *
+ * Cada item nomeia uma decisão de engenharia verificável, não um adjetivo.
+ * "Performance é requisito" é auditável; "somos apaixonados por qualidade"
+ * não quer dizer nada e qualquer concorrente escreve igual.
+ */
+import Section from '../ui/Section.astro';
+import SectionHeader from './SectionHeader.astro';
+import Icon from '../ui/Icon.astro';
+import { DIFERENCIAIS } from '../../data/content';
+---
+
+<Section
+  id="diferenciais"
+  labelledby="diferenciais-titulo"
+  surface="surface-2"
+  divider
+>
+  <SectionHeader
+    id="diferenciais-titulo"
+    eyebrow="Como trabalhamos"
+    title="Seis decisões que mudam o resultado"
+    lead="Não são promessas de atendimento. São escolhas técnicas que entram no projeto desde o primeiro dia — e que você pode conferir na entrega."
+  />
+
+  <ul role="list" class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-reveal-stagger>
+    {
+      DIFERENCIAIS.map((item) => (
+        <li class="card spotlight relative flex flex-col p-6 sm:p-7">
+          <span
+            aria-hidden="true"
+            class="grid size-10 place-items-center rounded-lg border border-line bg-surface-2 text-brand"
+          >
+            <Icon name={item.icone} size={19} />
+          </span>
+
+          <h3 class="mt-5 font-display text-[1.0625rem] font-600 leading-snug text-ink">
+            {item.titulo}
+          </h3>
+
+          <p class="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-2">
+            {item.texto}
+          </p>
+        </li>
+      ))
+    }
+  </ul>
+</Section>

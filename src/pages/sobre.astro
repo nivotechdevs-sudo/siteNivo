@@ -1,0 +1,227 @@
+---
+/**
+ * Sobre.
+ *
+ * Objetivo de SEO: E-E-A-T. O Google avalia experiência, especialização,
+ * autoridade e confiabilidade, e a página "sobre" é onde o avaliador
+ * (humano ou algoritmo) procura sinal de que existe gente real por trás.
+ *
+ * NOTA EDITORIAL — importante:
+ * Escrevi esta página inteira sobre CRENÇAS E PRÁTICAS, nunca sobre fatos
+ * que eu não podia verificar. Não há aqui número de clientes, tempo de
+ * mercado, tamanho de equipe nem nome de fundador, porque a NivoTech não me
+ * forneceu esses dados e inventá-los seria mentir na página cuja função é
+ * justamente provar confiabilidade.
+ *
+ * O bloco marcado abaixo é onde essas informações entram quando existirem —
+ * e é o acréscimo de maior impacto que se pode fazer neste site.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/sections/PageHero.astro';
+import Section from '../components/ui/Section.astro';
+import SectionHeader from '../components/sections/SectionHeader.astro';
+import Icon from '../components/ui/Icon.astro';
+import CtaBand from '../components/sections/CtaBand.astro';
+import Differentials from '../components/sections/Differentials.astro';
+
+import { LOCATION, cityLabel } from '../data/site';
+import { webPage, breadcrumbList } from '../lib/schema';
+
+const path = '/sobre/';
+
+const crumbs = [
+  { name: 'Início', url: '/' },
+  { name: 'Sobre', url: path },
+];
+
+const schemas = [
+  webPage({
+    url: path,
+    title: 'Sobre a NivoTech',
+    description: 'Quem constrói e no que acreditamos.',
+    type: 'AboutPage',
+    breadcrumb: crumbs,
+  }),
+  breadcrumbList(path, crumbs),
+];
+
+/** Convicções que orientam decisão técnica. Cada uma tem consequência real. */
+const CRENCAS = [
+  {
+    titulo: 'Site é produto, não peça gráfica',
+    texto:
+      'Um folder impresso termina quando sai da gráfica. Um site começa quando entra no ar: ele é usado, medido e melhorado. Tratar site como entrega única é o erro de origem da maioria dos projetos que auditamos.',
+  },
+  {
+    titulo: 'Velocidade é decisão de projeto',
+    texto:
+      'Performance não se adiciona no fim — ela se perde no meio. Todo layout aprovado sem considerar o custo de carregamento vira, semanas depois, uma negociação sobre o que cortar. Preferimos decidir antes.',
+  },
+  {
+    titulo: 'Acessibilidade não é extra',
+    texto:
+      'Um site que exclui quem usa leitor de tela ou navega por teclado está excluindo cliente pagante. E, sem exceção, as mesmas práticas que tornam um site acessível o tornam mais legível para o Google.',
+  },
+  {
+    titulo: 'Número sem fonte não é resultado',
+    texto:
+      'Qualquer um escreve “+300% de conversão” numa página. Nós preferimos mostrar o que dá para auditar: relatório do PageSpeed, painel de analytics no seu nome, dados que você consulta sem depender da nossa boa vontade.',
+  },
+  {
+    titulo: 'O projeto é do cliente',
+    texto:
+      'Domínio, hospedagem, código e contas de medição ficam no nome de quem contratou. Fornecedor que retém acesso não está protegendo o trabalho — está criando dependência.',
+  },
+  {
+    titulo: 'Recusar projeto também é serviço',
+    texto:
+      'Quando o que a empresa precisa não é um site novo, dizemos isso. Vender um projeto que não resolve o problema rende uma vez e custa a reputação para sempre.',
+  },
+];
+---
+
+<BaseLayout
+  title="Sobre — Engenharia, transparência e resultado"
+  description="Somos uma equipe de engenharia de sites focada em performance, SEO e conversão. Conheça as convicções técnicas que orientam cada decisão dos nossos projetos."
+  path={path}
+  image="/og/sobre.png"
+  schemas={schemas}
+>
+  <PageHero
+    eyebrow="Sobre"
+    title="Engenharia aplicada a um problema de negócio"
+    lead="A NivoTech nasceu de uma constatação simples: a maior parte dos sites de empresa é bonita e inútil. Bonita porque design virou commodity. Inútil porque ninguém cuidou da estrutura, da velocidade e do argumento."
+    breadcrumbs={crumbs}
+    seed={31}
+  />
+
+  {/* ---- Posicionamento ---- */}
+  <Section>
+    <div class="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+      <div class="prose">
+        <h2>O que fazemos de diferente</h2>
+        <p>
+          Existe uma separação histórica no mercado: de um lado, agências de
+          design, que entregam telas bonitas e passam o problema técnico
+          adiante. Do outro, desenvolvedores, que resolvem o técnico mas não
+          questionam se aquele conteúdo convence alguém.
+        </p>
+        <p>
+          O resultado dessa divisão é previsível: layouts aprovados que se
+          revelam impossíveis de deixar rápidos, ou sites tecnicamente
+          impecáveis que não explicam por que alguém deveria contratar aquela
+          empresa.
+        </p>
+        <p>
+          <strong>
+            Na NivoTech, design e engenharia são a mesma decisão.
+          </strong>{' '}
+          Quando a pessoa que escolhe o tamanho da imagem do topo é a mesma que
+          vai responder pelo LCP, essa escolha muda. Quando quem escreve o
+          título também sabe que ele é o H1 da página, ele fica melhor nas duas
+          frentes.
+        </p>
+
+        <h2>Por que “Nivo”</h2>
+        <p>
+          De nível. A ideia por trás do nome é a de elevação — tirar a presença
+          digital de uma empresa do patamar de “tem um site” para o de “o site
+          traz cliente”. É por isso que o símbolo da marca são três patamares
+          ascendentes, e por que as curvas de nível aparecem como textura ao
+          longo do site: é a representação cartográfica de altitude.
+        </p>
+        <p>
+          Também é por isso que a home mede as próprias Core Web Vitals e
+          mostra o resultado ao vivo. Se a gente afirma que constrói sites
+          rápidos, o mínimo é provar no site que está afirmando isso.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <div class="card p-7">
+          <h3 class="font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+            Onde estamos
+          </h3>
+          <p class="mt-3 text-[1.0625rem] font-600 text-ink">{cityLabel()}</p>
+          <p class="mt-1 text-[0.9375rem] leading-relaxed text-ink-2">
+            Atendemos empresas de {LOCATION.areaServed} com processo
+            integralmente remoto.
+          </p>
+        </div>
+
+        <div class="card p-7">
+          <h3 class="font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+            No que somos especializados
+          </h3>
+          <ul role="list" class="mt-4 flex flex-col gap-2.5">
+            {
+              [
+                'Sites institucionais de alta conversão',
+                'Landing pages para tráfego pago',
+                'SEO técnico e arquitetura de informação',
+                'Otimização de Core Web Vitals',
+                'Acessibilidade (WCAG 2.2 nível AA)',
+              ].map((item) => (
+                <li class="flex items-start gap-2.5 text-[0.9375rem] text-ink-2">
+                  <Icon name="check" size={16} class="mt-1 shrink-0 text-brand" />
+                  <span>{item}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        {/*
+          ======================================================================
+          PONTO DE EXPANSÃO — equipe e trajetória
+          ======================================================================
+          Aqui entram: fundadores com nome e foto, tempo de mercado, número de
+          projetos entregues, certificações. Deixei fora porque não tinha esses
+          dados e inventá-los na página de credibilidade seria contraditório.
+
+          É o acréscimo de MAIOR impacto que este site pode receber: o Google
+          usa a página "sobre" como sinal de E-E-A-T, e pessoas compram de
+          pessoas. Uma foto real e um parágrafo de trajetória valem mais que
+          qualquer adjetivo.
+          ======================================================================
+        */}
+      </div>
+    </div>
+  </Section>
+
+  {/* ---- Convicções ---- */}
+  <Section surface="surface-2" divider>
+    <SectionHeader
+      eyebrow="No que acreditamos"
+      title="Seis convicções que aparecem no orçamento"
+      lead="Não são valores de parede. Cada uma destas ideias muda uma decisão concreta de projeto — e algumas custam dinheiro para sustentar."
+    />
+
+    <ul role="list" class="mt-14 grid gap-5 md:grid-cols-2" data-reveal-stagger>
+      {
+        CRENCAS.map((c, i) => (
+          <li class="card spotlight relative p-7 sm:p-8">
+            <span
+              aria-hidden="true"
+              class="tabular font-display text-[0.75rem] font-700 tracking-[0.1em] text-brand"
+            >
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <h3 class="mt-3 font-display text-display-sm text-ink">{c.titulo}</h3>
+            <p class="mt-3 text-[0.9375rem] leading-relaxed text-ink-2">{c.texto}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Differentials />
+
+  <Section>
+    <CtaBand
+      title="Se isso faz sentido para você, vamos conversar"
+      text="Sem apresentação comercial de 40 slides. Uma conversa sobre o que você precisa e uma resposta honesta sobre se conseguimos ajudar."
+      whatsappMessage="Olá! Li a página sobre a NivoTech e gostaria de conversar."
+    />
+  </Section>
+</BaseLayout>

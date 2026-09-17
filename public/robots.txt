@@ -1,0 +1,32 @@
+# ============================================================================
+# robots.txt — nivotech.com.br
+# ============================================================================
+# Postura: permitir tudo que tem valor de busca e bloquear apenas o que não
+# tem. Bloquear demais é o erro mais caro que se comete neste arquivo — e
+# note que ele controla RASTREIO, não indexação: para tirar uma página do
+# índice use a meta robots noindex (é o que fazemos em /obrigado/ e nas
+# páginas legais, que por isso NÃO estão bloqueadas aqui: uma página
+# bloqueada no robots.txt nunca é lida, então o noindex dela nunca seria
+# visto).
+
+User-agent: *
+Allow: /
+
+# Parâmetros de campanha geram URLs duplicadas sem conteúdo novo.
+# O canonical autorreferente já resolve a indexação; isto poupa rastreio.
+Disallow: /*?utm_
+Disallow: /*?fbclid
+Disallow: /*?gclid
+
+# Assets de build: nada a indexar, e rastreá-los só gasta orçamento.
+Disallow: /_astro/
+
+# Rastreadores de IA para treinamento. Descomente para bloquear — decisão
+# de negócio, não técnica: bloquear também remove o site das respostas
+# desses assistentes, o que hoje já é um canal de descoberta relevante.
+# User-agent: GPTBot
+# Disallow: /
+# User-agent: CCBot
+# Disallow: /
+
+Sitemap: https://nivotech.com.br/sitemap-index.xml

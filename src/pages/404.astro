@@ -1,0 +1,90 @@
+---
+/**
+ * Página 404.
+ *
+ * Uma 404 útil recupera visita. A regra: nunca deixar a pessoa num beco sem
+ * saída — sempre oferecer caminhos concretos para onde ela provavelmente
+ * queria ir.
+ *
+ * Nota de hospedagem: em site estático, o servidor precisa estar configurado
+ * para devolver esta página com status HTTP 404 de verdade. Devolver 200
+ * numa página de erro cria "soft 404" e o Google acaba indexando páginas de
+ * erro. Vercel, Netlify e Cloudflare Pages fazem isso certo automaticamente
+ * a partir de `404.html` — ver o README.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/ui/Section.astro';
+import Button from '../components/ui/Button.astro';
+import Icon from '../components/ui/Icon.astro';
+import { NAV, whatsappUrl } from '../data/site';
+import { SERVICOS } from '../data/content';
+---
+
+<BaseLayout
+  title="Página não encontrada"
+  description="A página que você procurava não existe ou mudou de endereço. Veja abaixo os caminhos mais prováveis para o que você estava buscando no site da NivoTech."
+  path="/404/"
+  noindex
+  hideFooterCta
+>
+  <Section>
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="eyebrow justify-center">Erro 404</p>
+
+      <h1 class="mt-6 text-display-xl text-balance">
+        Esta página não existe por aqui
+      </h1>
+
+      <p class="mt-6 text-lead text-ink-2 text-pretty">
+        O endereço pode ter mudado, ou o link que te trouxe até aqui pode estar
+        desatualizado. Abaixo estão os caminhos mais prováveis.
+      </p>
+
+      <div class="mt-10 grid gap-3 text-left sm:grid-cols-2">
+        {
+          [...SERVICOS.map((s) => ({ label: s.nome, href: `/servicos/${s.slug}/`, desc: s.promessa })),
+            ...NAV.filter((n) => n.href !== '/servicos/').map((n) => ({
+              label: n.label,
+              href: n.href,
+              desc: n.description ?? '',
+            }))].map((item) => (
+            <a
+              href={item.href}
+              class="card card--interactive group relative block p-5"
+            >
+              <span class="flex items-center justify-between gap-3">
+                <span class="font-display text-[0.9375rem] font-600 text-ink">
+                  {item.label}
+                </span>
+                <Icon
+                  name="arrow-right"
+                  size={16}
+                  class="shrink-0 text-ink-3 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1 group-hover:text-brand"
+                />
+              </span>
+              {item.desc && (
+                <span class="mt-1.5 block text-[0.8125rem] leading-relaxed text-ink-3">
+                  {item.desc}
+                </span>
+              )}
+            </a>
+          ))
+        }
+      </div>
+
+      <div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <Button href="/" variant="primary" icon="arrow-right">
+          Ir para a página inicial
+        </Button>
+        <Button
+          href={whatsappUrl('Olá! Cheguei numa página que não existe no site e queria falar com vocês.')}
+          external
+          variant="secondary"
+          icon="whatsapp"
+        >
+          Falar no WhatsApp
+        </Button>
+      </div>
+    </div>
+  </Section>
+</BaseLayout>

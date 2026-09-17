@@ -1,0 +1,71 @@
+# Integração contínua.
+#
+# Roda em todo push e pull request. O objetivo é impedir que chegue à
+# produção qualquer coisa que a auditoria pegue: title duplicado, link
+# interno quebrado, imagem sem alt, JSON-LD inválido, H1 faltando.
+#
+# São problemas que não quebram o build e não aparecem no navegador — só
+# aparecem no Search Console semanas depois. Por isso a auditoria é
+# bloqueante aqui.
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+# Cancela execuções antigas do mesmo branch: só a última importa.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Tipos, build e auditoria
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificação de tipos
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+      - name: Auditoria de SEO e estrutura
+        run: node tools/audit.mjs
+
+      - name: Instalar Chromium para os testes de navegador
+        run: npx playwright install --with-deps chromium
+
+      - name: Acessibilidade (axe-core, WCAG 2.2 AA)
+        run: node tools/a11y.mjs
+
+      - name: Interações e navegação por teclado
+        run: node tools/interactions.mjs
+
+      - name: Relatório de tamanho do bundle
+        run: |
+          echo "### Peso das páginas geradas" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          for f in $(find dist -name '*.html' | sort); do
+            raw=$(stat -c%s "$f")
+            gz=$(gzip -c "$f" | wc -c)
+            printf '%-52s %6.1f KB  (gzip %5.1f KB)\n' \
+              "${f#dist}" "$(echo "$raw/1024" | bc -l)" "$(echo "$gz/1024" | bc -l)" \
+              >> $GITHUB_STEP_SUMMARY
+          done
+          echo '```' >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,131 @@
+---
+/**
+ * Página pós-envio.
+ *
+ * Duas funções, e a segunda é a que quase todo site esquece:
+ *
+ *  1. UX — confirma que a mensagem chegou e diz exatamente o que vem depois.
+ *     Formulário que só troca o botão por "enviado!" deixa a pessoa na
+ *     dúvida sobre se realmente funcionou.
+ *
+ *  2. MEDIÇÃO — é a URL que marca a conversão. Uma página dedicada permite
+ *     configurar a meta no GA4 por destino, contar conversões de Google Ads
+ *     e medir a taxa real do formulário. Sem ela, medir envio de formulário
+ *     em site estático vira gambiarra.
+ *
+ * `noindex`: não tem valor de busca, e aparecer na SERP seria ruim — gente
+ * caindo nela direto sem ter enviado nada.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/ui/Section.astro';
+import Button from '../components/ui/Button.astro';
+import Icon from '../components/ui/Icon.astro';
+
+import { CONTACT, whatsappUrl } from '../data/site';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+  .slice(0, 2);
+---
+
+<BaseLayout
+  title="Mensagem recebida"
+  description="Recebemos o seu briefing com sucesso. Uma pessoa da equipe vai ler o que você escreveu e responder em breve, com perguntas específicas sobre o seu caso."
+  path="/obrigado/"
+  noindex
+  hideFooterCta
+>
+  <Section>
+    <div class="mx-auto max-w-2xl text-center">
+      <span
+        aria-hidden="true"
+        class="mx-auto grid size-16 place-items-center rounded-full bg-success/12 text-success"
+      >
+        <Icon name="check" size={30} />
+      </span>
+
+      {/* `role="status"` faz o leitor de tela anunciar a confirmação ao
+          chegar na página, sem precisar que o usuário navegue até ela. */}
+      <h1 class="mt-8 text-display-xl text-balance" role="status">
+        Mensagem recebida
+      </h1>
+
+      <p class="mt-6 text-lead text-ink-2 text-pretty">
+        Obrigado pelo contato. Uma pessoa da equipe vai ler o que você
+        escreveu e responder {CONTACT.responseTime} — com perguntas
+        específicas sobre o seu caso, não com um modelo pronto.
+      </p>
+
+      <div class="mt-10 rounded-xl border border-line bg-surface p-7 text-left">
+        <h2 class="font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+          Enquanto isso
+        </h2>
+        <ul role="list" class="mt-5 flex flex-col gap-4">
+          <li class="flex items-start gap-3">
+            <Icon name="check" size={17} class="mt-1 shrink-0 text-brand" />
+            <span class="text-[0.9375rem] leading-relaxed text-ink-2">
+              Se o seu caso for urgente, chame no WhatsApp. Lá a resposta é
+              mais rápida.
+            </span>
+          </li>
+          <li class="flex items-start gap-3">
+            <Icon name="check" size={17} class="mt-1 shrink-0 text-brand" />
+            <span class="text-[0.9375rem] leading-relaxed text-ink-2">
+              Vale dar uma olhada no{' '}
+              <a href="/metodo/" class="link-underline">método</a>: você já
+              chega na conversa sabendo como o projeto funciona.
+            </span>
+          </li>
+          <li class="flex items-start gap-3">
+            <Icon name="check" size={17} class="mt-1 shrink-0 text-brand" />
+            <span class="text-[0.9375rem] leading-relaxed text-ink-2">
+              Confira a caixa de spam — às vezes a primeira resposta cai lá.
+            </span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <Button
+          href={whatsappUrl('Olá! Acabei de enviar um briefing pelo site.')}
+          external
+          variant="primary"
+          icon="whatsapp"
+          dataCta="obrigado-whatsapp"
+        >
+          Falar no WhatsApp
+        </Button>
+        <Button href="/" variant="secondary" icon="arrow-right">
+          Voltar ao início
+        </Button>
+      </div>
+    </div>
+
+    {
+      posts.length > 0 && (
+        <div class="mx-auto mt-20 max-w-3xl border-t border-line pt-12">
+          <h2 class="text-center font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+            Leitura para a espera
+          </h2>
+          <ul role="list" class="mt-7 grid gap-5 sm:grid-cols-2">
+            {posts.map((post) => (
+              <li>
+                <article class="card card--interactive relative h-full p-6">
+                  <h3 class="font-display text-[1.0625rem] font-600 leading-snug text-ink">
+                    <a href={`/blog/${post.id}/`} class="after:absolute after:inset-0 after:content-['']">
+                      {post.data.title}
+                    </a>
+                  </h3>
+                  <p class="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-2">
+                    {post.data.description}
+                  </p>
+                </article>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+  </Section>
+</BaseLayout>

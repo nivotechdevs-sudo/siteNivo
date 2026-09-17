@@ -1,0 +1,183 @@
+---
+/**
+ * Índice do blog.
+ *
+ * Papel estratégico: é o motor de crescimento orgânico. As páginas de
+ * serviço atacam buscas de INTENÇÃO COMERCIAL ("criação de sites"), que são
+ * poucas e disputadíssimas. O blog ataca buscas INFORMACIONAIS ("por que meu
+ * site é lento", "quanto custa um site"), que são muitas, mais fáceis de
+ * ranquear e trazem gente no início da jornada.
+ *
+ * Toda a estrutura já está pronta para escalar: coleção tipada, RSS,
+ * sitemap automático e schema Article por post.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/sections/PageHero.astro';
+import Section from '../../components/ui/Section.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import Icon from '../../components/ui/Icon.astro';
+
+import { getCollection } from 'astro:content';
+import { webPage, breadcrumbList } from '../../lib/schema';
+
+const path = '/blog/';
+
+const crumbs = [
+  { name: 'Início', url: '/' },
+  { name: 'Blog', url: path },
+];
+
+// Rascunhos ficam fora da build de produção mas continuam visíveis em dev,
+// para revisar antes de publicar.
+const posts = (await getCollection('blog', ({ data }) => import.meta.env.DEV || !data.draft)).sort(
+  (a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime(),
+);
+
+const [destaque, ...demais] = posts;
+
+const formatDate = (d: Date): string =>
+  d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+const schemas = [
+  webPage({
+    url: path,
+    title: 'Blog',
+    description: 'Performance, SEO e conversão na prática.',
+    type: 'CollectionPage',
+    breadcrumb: crumbs,
+  }),
+  breadcrumbList(path, crumbs),
+];
+---
+
+<BaseLayout
+  title="Blog — Performance, SEO e conversão na prática"
+  description="Artigos sobre velocidade de site, SEO técnico e conversão, escritos para quem decide — sem jargão e sem receita mágica."
+  path={path}
+  image="/og/blog.png"
+  schemas={schemas}
+>
+  <PageHero
+    eyebrow="Blog"
+    title="O que aprendemos construindo e medindo"
+    lead="Artigos sobre performance, SEO e conversão escritos para quem toma a decisão, não para quem escreve o código. Sem jargão desnecessário e sem promessa de atalho."
+    breadcrumbs={crumbs}
+    seed={53}
+  />
+
+  <Section>
+    {
+      posts.length === 0 ? (
+        <p class="text-lead text-ink-2">
+          Os primeiros artigos estão sendo escritos. Enquanto isso, acompanhe
+          pelo <a href="/rss.xml" class="link-underline">RSS</a>.
+        </p>
+      ) : (
+        <>
+          {/* ---- Destaque ---- */}
+          {destaque && (
+            <article
+              class="card card--interactive spotlight group relative grid gap-8 p-8 sm:p-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12"
+              data-reveal
+            >
+              <div>
+                <div class="flex items-center gap-3">
+                  <span class="rounded-full bg-brand-subtle px-3 py-1 text-[0.75rem] font-600 text-brand-subtle-ink">
+                    {destaque.data.category}
+                  </span>
+                  <time
+                    datetime={destaque.data.pubDate.toISOString()}
+                    class="text-[0.8125rem] text-ink-3"
+                  >
+                    {formatDate(destaque.data.pubDate)}
+                  </time>
+                </div>
+
+                <h2 class="mt-5 text-display-md text-balance">
+                  <a
+                    href={`/blog/${destaque.id}/`}
+                    class="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+                  >
+                    {destaque.data.title}
+                  </a>
+                </h2>
+
+                <p class="mt-4 text-[1.0625rem] leading-relaxed text-ink-2">
+                  {destaque.data.description}
+                </p>
+
+                <p
+                  class="mt-6 inline-flex items-center gap-2 font-600 text-brand"
+                  aria-hidden="true"
+                >
+                  Ler o artigo
+                  <Icon
+                    name="arrow-right"
+                    size={17}
+                    class="transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1"
+                  />
+                </p>
+              </div>
+
+              <div class="hidden lg:flex lg:items-center lg:justify-center lg:border-l lg:border-line">
+                <p class="max-w-[16rem] text-[0.8125rem] leading-relaxed text-ink-3">
+                  Artigo em destaque
+                </p>
+              </div>
+
+              <span
+                aria-hidden="true"
+                class="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 ring-2 ring-focus ring-offset-2 ring-offset-canvas transition-opacity group-has-[a:focus-visible]:opacity-100"
+              />
+            </article>
+          )}
+
+          {/* ---- Demais artigos ---- */}
+          {demais.length > 0 && (
+            <ul role="list" class="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3" data-reveal-stagger>
+              {demais.map((post) => (
+                <li>
+                  <article class="card card--interactive spotlight group relative flex h-full flex-col p-7">
+                    <div class="flex items-center gap-3">
+                      <span class="rounded-full bg-surface-2 px-2.5 py-1 text-[0.6875rem] font-600 uppercase tracking-wider text-ink-3">
+                        {post.data.category}
+                      </span>
+                    </div>
+
+                    <h2 class="mt-4 font-display text-display-sm text-ink">
+                      <a
+                        href={`/blog/${post.id}/`}
+                        class="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+                      >
+                        {post.data.title}
+                      </a>
+                    </h2>
+
+                    <p class="mt-3 flex-1 text-[0.9375rem] leading-relaxed text-ink-2">
+                      {post.data.description}
+                    </p>
+
+                    <time
+                      datetime={post.data.pubDate.toISOString()}
+                      class="mt-5 block border-t border-line pt-4 text-[0.8125rem] text-ink-3"
+                    >
+                      {formatDate(post.data.pubDate)}
+                    </time>
+                  </article>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )
+    }
+  </Section>
+
+  <Section spacing="sm">
+    <CtaBand
+      title="Prefere resolver em vez de ler?"
+      text="Se algum destes assuntos é exatamente o problema que você tem hoje, é mais rápido conversar do que pesquisar."
+      whatsappMessage="Olá! Vim pelo blog da NivoTech e quero conversar sobre o meu site."
+    />
+  </Section>
+</BaseLayout>

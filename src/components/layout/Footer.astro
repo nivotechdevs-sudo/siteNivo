@@ -1,0 +1,219 @@
+---
+/**
+ * Rodapé.
+ *
+ * Faz três trabalhos, nessa ordem de importância:
+ *  1. CTA final — quem rolou o site inteiro é o visitante mais qualificado
+ *     que existe. Deixar essa pessoa sem próximo passo é desperdício.
+ *  2. Links internos — o rodapé distribui autoridade para as páginas
+ *     profundas e dá ao rastreador um caminho para tudo que importa.
+ *  3. Dados de contato e informação legal.
+ */
+import Logo from '../ui/Logo.astro';
+import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
+import {
+  SITE,
+  CONTACT,
+  SOCIAL,
+  FOOTER_NAV,
+  LOCATION,
+  whatsappUrl,
+  cityLabel,
+} from '../../data/site';
+
+export interface Props {
+  hideCta?: boolean;
+}
+
+const { hideCta = false } = Astro.props;
+
+/**
+ * Nome da rede (em SOCIAL) → ícone. Uma rede sem ícone conhecido cai no
+ * genérico em vez de quebrar o rodapé, então adicionar um perfil novo em
+ * site.ts nunca derruba o build.
+ */
+const SOCIAL_ICONS: Record<string, 'instagram' | 'linkedin' | 'youtube' | 'facebook' | 'arrow-up-right'> = {
+  instagram: 'instagram',
+  linkedin: 'linkedin',
+  youtube: 'youtube',
+  facebook: 'facebook',
+};
+
+const socialIcon = (name: string) =>
+  SOCIAL_ICONS[name.toLowerCase()] ?? 'arrow-up-right';
+---
+
+{
+  !hideCta && (
+    <section
+      aria-labelledby="cta-final"
+      class="relative overflow-hidden border-t border-line bg-surface-2"
+    >
+      {/* Textura de fundo: malha + halo. Ambos `aria-hidden`, ambos puramente
+          CSS, nenhum pixel baixado. */}
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 bg-grid mask-fade opacity-60"
+      />
+      <div
+        aria-hidden="true"
+        class="breathe pointer-events-none absolute left-1/2 top-full size-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-50 blur-[90px]"
+        style="background: radial-gradient(circle, var(--c-brand-solid), transparent 68%)"
+      />
+
+      <div class="container-site relative py-(--spacing-section)">
+        <div class="mx-auto max-w-2xl text-center" data-reveal>
+          <p class="eyebrow justify-center">Próximo passo</p>
+
+          <h2
+            id="cta-final"
+            class="mt-5 text-display-lg text-balance"
+          >
+            Vamos descobrir se faz sentido trabalharmos juntos
+          </h2>
+
+          <p class="mt-5 text-lead text-ink-2 text-pretty">
+            A conversa inicial é um diagnóstico, não uma reunião de vendas.
+            Você sai dela sabendo o que o seu site precisa — tendo contratado
+            a gente ou não.
+          </p>
+
+          <div class="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button
+              href={whatsappUrl()}
+              external
+              variant="primary"
+              size="lg"
+              icon="whatsapp"
+              dataCta="footer-whatsapp"
+            >
+              Falar no WhatsApp
+            </Button>
+            <Button
+              href="/contato/"
+              variant="secondary"
+              size="lg"
+              icon="arrow-right"
+              dataCta="footer-briefing"
+            >
+              Enviar briefing
+            </Button>
+          </div>
+
+          <p class="mt-5 text-sm text-ink-3">
+            Resposta {CONTACT.responseTime} · {CONTACT.hours}
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<footer class="border-t border-line bg-canvas" data-print-hide>
+  <div class="container-site">
+    <div class="grid gap-10 py-14 md:grid-cols-[1.4fr_repeat(3,1fr)] md:gap-8">
+      {/* Coluna da marca */}
+      <div class="max-w-xs">
+        <Logo />
+        <p class="mt-4 text-[0.9375rem] leading-relaxed text-ink-3">
+          {SITE.tagline}. Sites e landing pages construídos com engenharia de
+          performance, SEO e conversão.
+        </p>
+
+        {
+          SOCIAL.length > 0 && (
+            <ul role="list" class="mt-5 flex items-center gap-2">
+              {SOCIAL.map((s) => (
+                <li>
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer me"
+                    class="grid size-9 place-items-center rounded-md border border-line text-ink-3 transition-colors hover:border-line-strong hover:text-ink"
+                    aria-label={s.label}
+                  >
+                    <Icon name={socialIcon(s.name)} size={17} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+
+      {/* Colunas de navegação */}
+      {
+        FOOTER_NAV.map((group) => (
+          <nav aria-label={group.title}>
+            <h2 class="font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+              {group.title}
+            </h2>
+            <ul role="list" class="mt-4 flex flex-col gap-2.5">
+              {group.items.map((item) => (
+                <li>
+                  <a
+                    href={item.href}
+                    class="text-[0.9375rem] text-ink-2 transition-colors hover:text-ink"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))
+      }
+    </div>
+
+    {/* Faixa de contato */}
+    <div
+      class="flex flex-col gap-4 border-t border-line py-7 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <ul role="list" class="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <li>
+          <a
+            href={whatsappUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 text-[0.9375rem] text-ink-2 transition-colors hover:text-ink"
+            data-cta="footer-contact-whatsapp"
+          >
+            <Icon name="whatsapp" size={17} />
+            {CONTACT.whatsappDisplay}
+          </a>
+        </li>
+        <li>
+          <a
+            href={`mailto:${CONTACT.email}`}
+            class="inline-flex items-center gap-2 text-[0.9375rem] text-ink-2 transition-colors hover:text-ink"
+          >
+            <Icon name="mail" size={17} />
+            {CONTACT.email}
+          </a>
+        </li>
+      </ul>
+
+      {
+        LOCATION.city && (
+          <p class="text-[0.9375rem] text-ink-3">
+            {cityLabel()} · Atendemos {LOCATION.areaServed}
+          </p>
+        )
+      }
+    </div>
+
+    {/* Linha legal */}
+    <div
+      class="flex flex-col gap-2 border-t border-line py-6 text-[0.8125rem] text-ink-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p>
+        © <span id="current-year">{new Date().getFullYear()}</span>{' '}
+        {SITE.legalName}. Todos os direitos reservados.
+      </p>
+      <p>
+        Feito com engenharia em {cityLabel()}.
+      </p>
+    </div>
+  </div>
+</footer>

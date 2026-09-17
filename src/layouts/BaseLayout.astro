@@ -1,0 +1,188 @@
+---
+/**
+ * Layout raiz de todas as páginas.
+ *
+ * Ordem do <head> é decisão de performance, não estética. A sequência aqui
+ * é deliberada:
+ *   1. charset e viewport  — o parser precisa deles antes de qualquer coisa
+ *   2. preconnect/preload  — inicia o download das fontes o quanto antes
+ *   3. script de tema      — bloqueante de propósito (ver comentário abaixo)
+ *   4. title e metadados   — o que o rastreador lê
+ *   5. CSS                 — o Astro injeta e faz o inline do crítico
+ */
+import '../styles/global.css';
+
+import Seo from '../components/seo/Seo.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import Analytics from '../components/layout/Analytics.astro';
+
+import { SITE, ANALYTICS } from '../data/site';
+import { graph, baseEntities } from '../lib/schema';
+
+export interface Props {
+  title: string;
+  description: string;
+  path: string;
+  image?: string;
+  imageAlt?: string;
+  noindex?: boolean;
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  isHome?: boolean;
+  /** Entidades JSON-LD específicas da página, somadas às globais. */
+  schemas?: (Record<string, unknown> | null)[];
+  /** Classes extras no <main>. */
+  mainClass?: string;
+  /** Oculta o CTA final padrão do rodapé (páginas que já são conversão). */
+  hideFooterCta?: boolean;
+}
+
+const {
+  title,
+  description,
+  path,
+  image,
+  imageAlt,
+  noindex = false,
+  type = 'website',
+  publishedTime,
+  modifiedTime,
+  isHome = false,
+  schemas = [],
+  mainClass = '',
+  hideFooterCta = false,
+} = Astro.props;
+
+const jsonLd = graph(...baseEntities(), ...schemas);
+---
+
+<!doctype html>
+<html lang="pt-BR" prefix="og: https://ogp.me/ns#">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    {/* --- Fontes ---------------------------------------------------------
+        Auto-hospedadas: sem DNS lookup, sem handshake TLS com terceiro, sem
+        requisição que o bloqueador de anúncios possa atrasar.
+        `preload` porque a fonte de título é o elemento LCP da maioria das
+        páginas — sem isso, o navegador só descobre a fonte quando já
+        processou o CSS, e o LCP paga esse atraso inteiro. */}
+    <link
+      rel="preload"
+      href="/fonts/inter-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preload"
+      href="/fonts/sora-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+
+    {/* --- Tema -----------------------------------------------------------
+        Script bloqueante, e isso é intencional. É o único jeito de aplicar o
+        tema ANTES da primeira pintura. Qualquer alternativa assíncrona causa
+        o flash branco em quem usa tema escuro.
+        São ~200 bytes inline: o custo é irrelevante perto do defeito visual
+        que ele evita.
+        `try/catch` porque localStorage lança em navegação privada com
+        cookies bloqueados. */}
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem('nivo-theme');
+          if (stored === 'dark' || stored === 'light') {
+            document.documentElement.setAttribute('data-theme', stored);
+          }
+        } catch (e) {
+          /* sem localStorage: cai na preferência do sistema via CSS */
+        }
+      })();
+    </script>
+
+    <Seo
+      title={title}
+      description={description}
+      path={path}
+      image={image}
+      imageAlt={imageAlt}
+      noindex={noindex}
+      type={type}
+      publishedTime={publishedTime}
+      modifiedTime={modifiedTime}
+      isHome={isHome}
+    />
+
+    <meta name="author" content={SITE.name} />
+    <meta name="generator" content={Astro.generator} />
+
+    {/* Pinta a barra do navegador de acordo com o tema ativo. */}
+    <meta
+      name="theme-color"
+      content="#fbfaf8"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#07090d"
+      media="(prefers-color-scheme: dark)"
+    />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={`Blog ${SITE.name}`}
+      href="/rss.xml"
+    />
+
+    {
+      ANALYTICS.googleSiteVerification && (
+        <meta
+          name="google-site-verification"
+          content={ANALYTICS.googleSiteVerification}
+        />
+      )
+    }
+
+    <JsonLd data={jsonLd} />
+
+    {/* O script do site é module + defer: baixa em paralelo e executa depois
+        do parse, sem nunca bloquear a renderização. */}
+    <script>
+      import '../scripts/app.ts';
+    </script>
+
+    <Analytics />
+  </head>
+
+  <body>
+    {/* Primeiro elemento focável da página: atalho para quem navega por
+        teclado ou leitor de tela pular o menu inteiro. */}
+    <a href="#conteudo" class="skip-link">Pular para o conteúdo</a>
+
+    {/* Sentinela do cabeçalho: 1px observado por IntersectionObserver no
+        lugar de um listener de scroll. Ver src/scripts/app.ts. */}
+    <div id="scroll-sentinel" aria-hidden="true" class="absolute top-0 h-px w-full">
+    </div>
+
+    <Header />
+
+    <main id="conteudo" class={mainClass}>
+      <slot />
+    </main>
+
+    <Footer hideCta={hideFooterCta} />
+  </body>
+</html>

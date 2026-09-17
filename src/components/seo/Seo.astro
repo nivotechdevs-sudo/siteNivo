@@ -1,0 +1,94 @@
+---
+/**
+ * Metadados de uma página: title, description, canonical, Open Graph,
+ * Twitter/X Cards e diretivas de robots.
+ *
+ * Centralizado por um motivo prático: metadado espalhado por página é a
+ * origem mais comum de canonical errado e de description duplicada — os
+ * dois problemas de SEO técnico mais caros e mais chatos de rastrear.
+ */
+import { SITE, absoluteUrl } from '../../data/site';
+
+export interface Props {
+  /** Sem o nome da marca: o template abaixo cuida disso. */
+  title: string;
+  /** 150–160 caracteres. Não é fator de ranqueamento, mas define o CTR. */
+  description: string;
+  /** Caminho iniciando com "/" e terminando com "/". */
+  path: string;
+  /** Imagem social. Padrão: a OG gerada da marca. */
+  image?: string;
+  imageAlt?: string;
+  /** `true` em páginas sem valor de busca (obrigado, legais). */
+  noindex?: boolean;
+  /** `article` em posts do blog. */
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  /** Sobrescreve o canonical — use só em caso de conteúdo sindicado. */
+  canonicalOverride?: string;
+  /** Marca a home: o title dela não recebe sufixo. */
+  isHome?: boolean;
+}
+
+const {
+  title,
+  description,
+  path,
+  image = '/og/default.png',
+  imageAlt = `${SITE.name} — ${SITE.tagline}`,
+  noindex = false,
+  type = 'website',
+  publishedTime,
+  modifiedTime,
+  canonicalOverride,
+  isHome = false,
+} = Astro.props;
+
+// A home leva o title completo; as internas ganham o sufixo da marca.
+// Acima de ~60 caracteres o Google reescreve o title, então o sufixo é curto.
+const fullTitle = isHome ? title : `${title} | ${SITE.name}`;
+
+const canonical = canonicalOverride ?? absoluteUrl(path);
+const ogImage = absoluteUrl(image);
+
+const robots = noindex
+  ? 'noindex, nofollow'
+  : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+---
+
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+
+{/* Canonical absoluto e autorreferente em toda página: a defesa mais
+    simples contra conteúdo duplicado por parâmetro de URL. */}
+<link rel="canonical" href={canonical} />
+
+<meta name="robots" content={robots} />
+<meta name="googlebot" content={robots} />
+
+{/* Open Graph */}
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={SITE.name} />
+<meta property="og:locale" content="pt_BR" />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt} />
+
+{type === 'article' && publishedTime && (
+  <meta property="article:published_time" content={publishedTime} />
+)}
+{type === 'article' && modifiedTime && (
+  <meta property="article:modified_time" content={modifiedTime} />
+)}
+
+{/* Twitter/X — summary_large_image é o formato com maior CTR */}
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+<meta name="twitter:image:alt" content={imageAlt} />

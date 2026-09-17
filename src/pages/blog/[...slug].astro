@@ -1,0 +1,210 @@
+---
+/**
+ * Post do blog.
+ *
+ * Pontos de SEO implementados aqui:
+ *  - schema Article ligado ao grafo da organização (E-E-A-T)
+ *  - `datePublished` e `dateModified` — sinal de frescor do conteúdo
+ *  - breadcrumb até o artigo
+ *  - links internos para serviços no fim (distribui autoridade e converte)
+ *  - `<time datetime>` legível por máquina
+ *  - largura de leitura controlada (68ch), que é UX e tempo de permanência
+ */
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render } from 'astro:content';
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Section from '../../components/ui/Section.astro';
+import Breadcrumbs from '../../components/seo/Breadcrumbs.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import Icon from '../../components/ui/Icon.astro';
+
+import { article, webPage, breadcrumbList } from '../../lib/schema';
+import { SERVICOS } from '../../data/content';
+
+export const getStaticPaths = (async () => {
+  const posts = await getCollection('blog', ({ data }) => import.meta.env.DEV || !data.draft);
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}) satisfies GetStaticPaths;
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+
+const path = `/blog/${post.id}/`;
+
+const crumbs = [
+  { name: 'Início', url: '/' },
+  { name: 'Blog', url: '/blog/' },
+  { name: post.data.title, url: path },
+];
+
+const formatDate = (d: Date): string =>
+  d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+/**
+ * Tempo de leitura, calculado do markdown cru do post.
+ *
+ * Removemos a sintaxe que não é texto lido (blocos de código, URLs de link,
+ * marcadores) antes de contar. Não precisa ser exato — precisa ser honesto:
+ * 200 palavras por minuto é a média de leitura em português para texto
+ * técnico, e o número serve para a pessoa decidir se lê agora ou depois.
+ */
+const palavras = post.body
+  ? post.body
+      .replace(/```[\s\S]*?```/g, '')      // blocos de código
+      .replace(/`[^`]*`/g, '')              // código inline
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links: mantém o texto, tira a URL
+      .replace(/^---[\s\S]*?---/m, '')      // frontmatter
+      .replace(/[#>*_~|-]/g, ' ')           // marcadores de markdown
+      .split(/\s+/u)
+      .filter(Boolean).length
+  : 0;
+
+const minutos = Math.max(1, Math.round(palavras / 200));
+
+const schemas = [
+  webPage({
+    url: path,
+    title: post.data.title,
+    description: post.data.description,
+    datePublished: post.data.pubDate.toISOString(),
+    dateModified: (post.data.updatedDate ?? post.data.pubDate).toISOString(),
+    breadcrumb: crumbs,
+  }),
+  breadcrumbList(path, crumbs),
+  article({
+    url: path,
+    headline: post.data.title,
+    description: post.data.description,
+    datePublished: post.data.pubDate.toISOString(),
+    dateModified: (post.data.updatedDate ?? post.data.pubDate).toISOString(),
+    authorName: post.data.author,
+    keywords: post.data.keywords,
+    wordCount: palavras || undefined,
+    image: post.data.image?.src,
+  }),
+];
+
+// Só os H2 no sumário: incluir H3 gera uma lista longa demais para ajudar.
+const sumario = headings.filter((h) => h.depth === 2);
+---
+
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  path={path}
+  type="article"
+  publishedTime={post.data.pubDate.toISOString()}
+  modifiedTime={(post.data.updatedDate ?? post.data.pubDate).toISOString()}
+  image={post.data.image?.src ?? '/og/blog.png'}
+  imageAlt={post.data.image?.alt}
+  schemas={schemas}
+>
+  <article>
+    {/* ---- Cabeçalho do artigo ---- */}
+    <header class="border-b border-line">
+      <div class="container-site">
+        <div class="mx-auto max-w-(--container-prose) py-12 sm:py-16">
+          <Breadcrumbs items={crumbs} class="mb-7" />
+
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="rounded-full bg-brand-subtle px-3 py-1 text-[0.75rem] font-600 text-brand-subtle-ink">
+              {post.data.category}
+            </span>
+            <time datetime={post.data.pubDate.toISOString()} class="text-[0.8125rem] text-ink-3">
+              {formatDate(post.data.pubDate)}
+            </time>
+            <span aria-hidden="true" class="text-line-strong">·</span>
+            <span class="text-[0.8125rem] text-ink-3">{minutos} min de leitura</span>
+          </div>
+
+          <h1 class="mt-5 text-display-xl text-balance">{post.data.title}</h1>
+
+          <p class="mt-6 text-lead text-ink-2 text-pretty">{post.data.description}</p>
+
+          {
+            post.data.updatedDate && (
+              <p class="mt-5 text-[0.8125rem] text-ink-3">
+                Atualizado em{' '}
+                <time datetime={post.data.updatedDate.toISOString()}>
+                  {formatDate(post.data.updatedDate)}
+                </time>
+              </p>
+            )
+          }
+        </div>
+      </div>
+    </header>
+
+    {/* ---- Corpo ---- */}
+    <div class="container-site">
+      <div class="grid gap-12 py-12 sm:py-16 lg:grid-cols-[1fr_16rem] lg:gap-16">
+        <div class="prose mx-auto lg:mx-0">
+          <Content />
+        </div>
+
+        {/* ---- Sumário ----
+            `<nav>` de verdade, com aria-label. Em telas pequenas some: uma
+            lista de âncoras empilhada antes do texto atrapalha mais do que
+            ajuda no celular. */}
+        {
+          sumario.length > 2 && (
+            <nav aria-label="Neste artigo" class="hidden lg:block">
+              <div class="sticky top-28">
+                <h2 class="font-sans text-[0.75rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+                  Neste artigo
+                </h2>
+                <ul role="list" class="mt-4 flex flex-col gap-2.5 border-l border-line pl-4">
+                  {sumario.map((h) => (
+                    <li>
+                      <a
+                        href={`#${h.slug}`}
+                        class="block text-[0.875rem] leading-snug text-ink-3 transition-colors hover:text-ink"
+                      >
+                        {h.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </nav>
+          )
+        }
+      </div>
+    </div>
+  </article>
+
+  {/* ---- Links internos para serviços ----
+      Fecha o ciclo: quem chegou por busca informacional é apresentado à
+      oferta comercial no momento em que o assunto ainda está quente. */}
+  <Section surface="surface-2" divider spacing="sm">
+    <h2 class="text-display-md" data-reveal>Como a gente resolve isso na prática</h2>
+    <ul role="list" class="mt-8 grid gap-5 sm:grid-cols-2" data-reveal-stagger>
+      {
+        SERVICOS.map((s) => (
+          <li>
+            <article class="card card--interactive spotlight group relative h-full p-7">
+              <h3 class="font-display text-display-sm text-ink">
+                <a
+                  href={`/servicos/${s.slug}/`}
+                  class="after:absolute after:inset-0 after:content-['']"
+                >
+                  {s.nome}
+                </a>
+              </h3>
+              <p class="mt-3 text-[0.9375rem] leading-relaxed text-ink-2">{s.promessa}</p>
+              <p class="mt-5 inline-flex items-center gap-2 text-[0.9375rem] font-600 text-brand" aria-hidden="true">
+                Ver o serviço
+                <Icon name="arrow-right" size={16} class="transition-transform duration-300 group-hover:translate-x-1" />
+              </p>
+            </article>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section spacing="sm">
+    <CtaBand whatsappMessage={`Olá! Li o artigo "${post.data.title}" e queria conversar sobre o meu site.`} />
+  </Section>
+</BaseLayout>

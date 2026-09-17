@@ -1,0 +1,142 @@
+---
+/**
+ * Alternador de tema.
+ *
+ * Três estados em ciclo: sistema → claro → escuro → sistema.
+ * "Sistema" é o padrão e precisa existir como opção real: é a preferência
+ * que o usuário já configurou no aparelho, e ignorá-la é sobrepor uma
+ * escolha que ele já fez.
+ *
+ * Os três ícones ficam no DOM e a visibilidade é trocada por CSS a partir do
+ * atributo no <html>. Assim não há nenhum trabalho de JS para pintar o ícone
+ * certo no carregamento.
+ */
+---
+
+<button
+  type="button"
+  data-theme-toggle
+  class="group relative grid size-10 place-items-center rounded-md border border-line text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
+  aria-label="Alternar tema (atual: sistema)"
+  data-print-hide
+>
+  {/* Sistema */}
+  <svg
+    class="theme-icon theme-icon--system size-[1.125rem]"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.75"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+    <path d="M8 21h8m-4-4v4"></path>
+  </svg>
+
+  {/* Claro */}
+  <svg
+    class="theme-icon theme-icon--light size-[1.125rem]"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.75"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="4"></circle>
+    <path
+      d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+    ></path>
+  </svg>
+
+  {/* Escuro */}
+  <svg
+    class="theme-icon theme-icon--dark size-[1.125rem]"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.75"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>
+  </svg>
+</button>
+
+<style>
+  /* Um ícone por vez, decidido por CSS a partir do atributo no <html>.
+     Zero JS envolvido em mostrar o estado inicial correto. */
+  .theme-icon {
+    display: none;
+  }
+
+  :global(html:not([data-theme])) .theme-icon--system,
+  :global(html[data-theme='light']) .theme-icon--light,
+  :global(html[data-theme='dark']) .theme-icon--dark {
+    display: block;
+  }
+</style>
+
+<script>
+  /**
+   * Ciclo de tema. Persiste a escolha explícita; "sistema" é representado
+   * pela ausência de valor salvo, para que o site volte a seguir o aparelho.
+   */
+  /**
+   * O componente pode aparecer mais de uma vez na página (cabeçalho e menu
+   * mobile). Por isso a seleção é por atributo, não por id — id duplicado é
+   * HTML inválido e faria só o primeiro botão funcionar.
+   */
+  const botoes = document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]');
+  const root = document.documentElement;
+
+  if (botoes.length > 0) {
+    const LABELS = {
+      system: 'Alternar tema (atual: sistema)',
+      light: 'Alternar tema (atual: claro)',
+      dark: 'Alternar tema (atual: escuro)',
+    } as const;
+
+    type Theme = keyof typeof LABELS;
+
+    const current = (): Theme =>
+      (root.getAttribute('data-theme') as Theme | null) ?? 'system';
+
+    const apply = (theme: Theme): void => {
+      if (theme === 'system') {
+        root.removeAttribute('data-theme');
+        try {
+          localStorage.removeItem('nivo-theme');
+        } catch {
+          /* armazenamento indisponível — o tema vale só para esta sessão */
+        }
+      } else {
+        root.setAttribute('data-theme', theme);
+        try {
+          localStorage.setItem('nivo-theme', theme);
+        } catch {
+          /* idem */
+        }
+      }
+      // Todos os botões refletem o mesmo estado.
+      for (const b of botoes) b.setAttribute('aria-label', LABELS[theme]);
+    };
+
+    // Sincroniza o rótulo com o que o script inline do <head> já aplicou.
+    apply(current());
+
+    const next: Record<Theme, Theme> = {
+      system: 'light',
+      light: 'dark',
+      dark: 'system',
+    };
+
+    for (const btn of botoes) {
+      btn.addEventListener('click', () => apply(next[current()]));
+    }
+  }
+</script>

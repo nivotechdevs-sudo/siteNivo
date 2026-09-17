@@ -1,0 +1,74 @@
+---
+/**
+ * Casca de seção: ritmo vertical e contêiner consistentes.
+ *
+ * Centralizar isso resolve o problema clássico de espaçamento inconsistente
+ * entre seções — cada uma com um padding decidido na hora. Aqui existe um
+ * ritmo só, definido por token no sistema de design.
+ *
+ * Renderiza <section> por padrão, mas aceita a tag: uma página com várias
+ * seções irmãs ainda precisa de uma hierarquia de títulos correta.
+ */
+export interface Props {
+  as?: 'section' | 'div' | 'article' | 'aside';
+  /** Ancora para links internos e para o sumário. */
+  id?: string;
+  /** Aponta para o id do título que nomeia a seção (acessibilidade). */
+  labelledby?: string;
+  /** `sm` para seções de apoio, `none` quando o filho controla o espaço. */
+  spacing?: 'default' | 'sm' | 'none';
+  /** Fundo da seção. */
+  surface?: 'canvas' | 'surface' | 'surface-2' | 'inverse';
+  /** Linha divisória no topo. */
+  divider?: boolean;
+  class?: string;
+  /** Desliga o contêiner interno quando a seção sangra até a borda. */
+  bleed?: boolean;
+}
+
+const {
+  as: Tag = 'section',
+  id,
+  labelledby,
+  spacing = 'default',
+  surface = 'canvas',
+  divider = false,
+  class: className = '',
+  bleed = false,
+} = Astro.props;
+
+const SPACING = {
+  default: 'py-(--spacing-section)',
+  sm: 'py-(--spacing-section-sm)',
+  none: '',
+} as const;
+
+const SURFACE = {
+  canvas: 'bg-canvas',
+  surface: 'bg-surface',
+  'surface-2': 'bg-surface-2',
+  inverse: 'bg-inverse text-inverse-ink',
+} as const;
+---
+
+<Tag
+  id={id}
+  aria-labelledby={labelledby}
+  class:list={[
+    'relative',
+    SPACING[spacing],
+    SURFACE[surface],
+    divider && 'border-t border-line',
+    className,
+  ]}
+>
+  {
+    bleed ? (
+      <slot />
+    ) : (
+      <div class="container-site">
+        <slot />
+      </div>
+    )
+  }
+</Tag>

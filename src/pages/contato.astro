@@ -1,0 +1,210 @@
+---
+/**
+ * Contato — a página de conversão.
+ *
+ * Arquitetura da página, e o motivo:
+ *
+ *  - WHATSAPP PRIMEIRO. É o canal dominante no B2B brasileiro e tem o menor
+ *    atrito que existe. Escondê-lo abaixo do formulário custaria lead real.
+ *  - FORMULÁRIO PARA QUEM QUER DETALHAR. Quem tem um projeto complexo
+ *    prefere escrever com calma a improvisar numa conversa de chat.
+ *  - "O QUE ACONTECE DEPOIS" VISÍVEL. A maior fonte de hesitação num
+ *    formulário é não saber o que vem a seguir. Responder isso ao lado do
+ *    botão é uma das intervenções de conversão mais baratas que existem.
+ *  - FAQ COMPLETO NO FIM. Última chance de derrubar objeção antes do envio.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/sections/PageHero.astro';
+import Section from '../components/ui/Section.astro';
+import ContactForm from '../components/sections/ContactForm.astro';
+import Faq from '../components/sections/Faq.astro';
+import Icon from '../components/ui/Icon.astro';
+import Button from '../components/ui/Button.astro';
+
+import { CONTACT, whatsappUrl, cityLabel, LOCATION } from '../data/site';
+import { FAQ } from '../data/content';
+import { webPage, breadcrumbList, faqPage } from '../lib/schema';
+
+const path = '/contato/';
+
+const crumbs = [
+  { name: 'Início', url: '/' },
+  { name: 'Contato', url: path },
+];
+
+const schemas = [
+  webPage({
+    url: path,
+    title: 'Contato',
+    description: 'Fale com a NivoTech sobre o seu projeto.',
+    type: 'ContactPage',
+    breadcrumb: crumbs,
+  }),
+  breadcrumbList(path, crumbs),
+  faqPage(path, FAQ),
+];
+
+/** Remove a incerteza sobre o que vem depois do envio. */
+const PROXIMOS_PASSOS = [
+  {
+    numero: '01',
+    titulo: 'Confirmação na hora',
+    texto: 'Você vê a confirmação na tela assim que enviar. Nada de dúvida sobre se chegou.',
+  },
+  {
+    numero: '02',
+    titulo: `Resposta ${CONTACT.responseTime}`,
+    texto:
+      'Uma pessoa lê o que você escreveu e responde com perguntas específicas — não com um modelo pronto.',
+  },
+  {
+    numero: '03',
+    titulo: 'Diagnóstico de 30 a 45 minutos',
+    texto:
+      'Uma conversa por vídeo sobre o seu negócio e o que o site precisa resolver. Sem custo e sem apresentação comercial.',
+  },
+  {
+    numero: '04',
+    titulo: 'Proposta com escopo e prazo',
+    texto:
+      'Se fizer sentido para os dois lados, você recebe escopo, prazo e valor por escrito. Se não fizer, a gente diz isso também.',
+  },
+];
+---
+
+<BaseLayout
+  title="Contato — Vamos conversar sobre o seu projeto"
+  description="Fale com a NivoTech pelo WhatsApp ou envie um briefing. Diagnóstico sem custo e sem compromisso, com resposta de uma pessoa real."
+  path={path}
+  image="/og/contato.png"
+  schemas={schemas}
+  hideFooterCta
+>
+  <PageHero
+    eyebrow="Contato"
+    title="Conte o que você precisa"
+    lead="Você escolhe o canal. Em qualquer um deles, quem responde é alguém que entende do assunto — não um atendimento de triagem."
+    breadcrumbs={crumbs}
+    seed={41}
+  />
+
+  <Section>
+    <div class="grid gap-10 lg:grid-cols-[1fr_1.35fr] lg:gap-14">
+      {/* ---- Coluna de canais ---- */}
+      <div class="flex flex-col gap-4 lg:sticky lg:top-28 lg:self-start">
+        {/* WhatsApp em destaque: é o caminho de menor atrito. */}
+        <div class="border-gradient relative overflow-hidden rounded-xl bg-surface p-7">
+          <span
+            aria-hidden="true"
+            class="grid size-11 place-items-center rounded-lg bg-success/12 text-success"
+          >
+            <Icon name="whatsapp" size={21} />
+          </span>
+
+          <h2 class="mt-5 font-display text-display-sm text-ink">
+            Prefere conversar agora?
+          </h2>
+          <p class="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-2">
+            É o caminho mais rápido. Mande uma mensagem contando o que precisa e
+            a gente responde direto.
+          </p>
+
+          <div class="mt-6">
+            <Button
+              href={whatsappUrl()}
+              external
+              variant="primary"
+              icon="whatsapp"
+              class="w-full"
+              dataCta="contato-whatsapp"
+            >
+              {CONTACT.whatsappDisplay}
+            </Button>
+          </div>
+
+          <p class="mt-3 text-[0.8125rem] text-ink-3">{CONTACT.hours}</p>
+        </div>
+
+        <div class="card p-7">
+          <h2 class="font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+            Outros canais
+          </h2>
+
+          <ul role="list" class="mt-4 flex flex-col gap-3.5">
+            <li class="flex items-start gap-3">
+              <Icon name="mail" size={18} class="mt-0.5 shrink-0 text-ink-3" />
+              <span class="min-w-0">
+                <span class="block text-[0.8125rem] text-ink-3">E-mail</span>
+                <a
+                  href={`mailto:${CONTACT.email}`}
+                  class="link-underline break-all text-[0.9375rem]"
+                >
+                  {CONTACT.email}
+                </a>
+              </span>
+            </li>
+            <li class="flex items-start gap-3">
+              <Icon name="target" size={18} class="mt-0.5 shrink-0 text-ink-3" />
+              <span>
+                <span class="block text-[0.8125rem] text-ink-3">Atendimento</span>
+                <span class="text-[0.9375rem] text-ink-2">
+                  {cityLabel()} · {LOCATION.areaServed}, remoto
+                </span>
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        {/* ---- O que acontece depois ---- */}
+        <div class="card p-7">
+          <h2 class="font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+            O que acontece depois
+          </h2>
+          <ol role="list" class="mt-5 flex flex-col gap-5">
+            {
+              PROXIMOS_PASSOS.map((passo) => (
+                <li class="flex gap-3.5">
+                  <span
+                    aria-hidden="true"
+                    class="tabular mt-0.5 font-display text-[0.6875rem] font-700 text-brand"
+                  >
+                    {passo.numero}
+                  </span>
+                  <span>
+                    <span class="block text-[0.9375rem] font-600 text-ink">
+                      {passo.titulo}
+                    </span>
+                    <span class="mt-1 block text-[0.875rem] leading-relaxed text-ink-2">
+                      {passo.texto}
+                    </span>
+                  </span>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+      </div>
+
+      {/* ---- Formulário ---- */}
+      <div>
+        <h2 class="text-display-md text-balance">
+          Ou escreva com calma o que você precisa
+        </h2>
+        <p class="mt-3 text-[1.0625rem] leading-relaxed text-ink-2">
+          Quatro campos obrigatórios. O resto é opcional e só serve para a nossa
+          primeira resposta já vir útil.
+        </p>
+
+        <div class="mt-7">
+          <ContactForm />
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <Faq
+    surface="surface-2"
+    title="Antes de enviar, talvez isto ajude"
+    lead="As perguntas que mais aparecem nesta etapa. Se a sua não estiver aqui, pergunte no formulário mesmo."
+  />
+</BaseLayout>

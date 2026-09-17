@@ -1,0 +1,218 @@
+---
+/**
+ * Página do método.
+ *
+ * Função na conversão: em serviço de ticket alto, a objeção que mais trava
+ * não é preço — é risco. "E se eles sumirem no meio?", "e se estourar o
+ * prazo?", "e se eu não gostar e já tiver pago?". Esta página responde a
+ * essas perguntas antes que sejam feitas.
+ *
+ * Também é a página que sustenta a promessa de transparência que a NivoTech
+ * já fazia no site anterior. Prometer transparência e não mostrar o processo
+ * é contradição performática.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/sections/PageHero.astro';
+import Section from '../components/ui/Section.astro';
+import SectionHeader from '../components/sections/SectionHeader.astro';
+import Icon from '../components/ui/Icon.astro';
+import CtaBand from '../components/sections/CtaBand.astro';
+import Guarantees from '../components/sections/Guarantees.astro';
+
+import { METODO } from '../data/content';
+import { webPage, breadcrumbList } from '../lib/schema';
+
+const path = '/metodo/';
+
+const crumbs = [
+  { name: 'Início', url: '/' },
+  { name: 'Método', url: path },
+];
+
+const schemas = [
+  webPage({
+    url: path,
+    title: 'Método',
+    description: 'Como conduzimos um projeto do briefing ao resultado.',
+    breadcrumb: crumbs,
+  }),
+  breadcrumbList(path, crumbs),
+];
+---
+
+<BaseLayout
+  title="Método — Como conduzimos um projeto de site"
+  description="As seis etapas de um projeto NivoTech, com entregável definido e critério de aceite em cada uma. Processo transparente, sem caixa-preta e sem surpresa no fim."
+  path={path}
+  image="/og/metodo.png"
+  schemas={schemas}
+>
+  <PageHero
+    eyebrow="Método"
+    title="Você não vai descobrir o resultado só na entrega"
+    lead="Projeto de site trava por falta de clareza, não por falta de talento. Estas seis etapas existem para que você saiba, a qualquer momento, o que está sendo feito, o que falta e o que se espera de você."
+    breadcrumbs={crumbs}
+    seed={23}
+  />
+
+  {/* ---- Princípios ---- */}
+  <Section spacing="sm">
+    <ul role="list" class="grid gap-5 md:grid-cols-3" data-reveal-stagger>
+      {
+        [
+          {
+            titulo: 'Ambiente real desde a semana 1',
+            texto:
+              'Você recebe um link onde o site de verdade evolui. Não é imagem estática de apresentação — é o site rodando no navegador.',
+            icone: 'eye' as const,
+          },
+          {
+            titulo: 'Critério de aceite combinado antes',
+            texto:
+              'Cada etapa tem, por escrito, o que precisa estar pronto para ser considerada concluída. Sem “achei que estava incluso”.',
+            icone: 'check' as const,
+          },
+          {
+            titulo: 'Uma pessoa responsável',
+            texto:
+              'Você fala com quem está construindo, não com um intermediário que repassa recado. Menos ruído, decisão mais rápida.',
+            icone: 'shield' as const,
+          },
+        ].map((p) => (
+          <li class="card spotlight relative p-7">
+            <span
+              aria-hidden="true"
+              class="grid size-10 place-items-center rounded-lg bg-brand-subtle text-brand-subtle-ink"
+            >
+              <Icon name={p.icone} size={19} />
+            </span>
+            <h2 class="mt-5 font-display text-[1.0625rem] font-600 leading-snug text-ink">
+              {p.titulo}
+            </h2>
+            <p class="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-2">
+              {p.texto}
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  {/* ---- Etapas em detalhe ---- */}
+  <Section surface="surface-2" divider>
+    <SectionHeader
+      eyebrow="As seis etapas"
+      title="O que acontece, na ordem em que acontece"
+      lead="Cada etapa só começa quando a anterior foi aceita. É o que evita refazer trabalho — e refazer trabalho é o que estoura prazo."
+    />
+
+    <ol role="list" class="mt-14 flex flex-col gap-4">
+      {
+        METODO.map((etapa, i) => (
+          <li
+            class="card grid gap-7 p-7 sm:p-9 lg:grid-cols-[auto_1fr_1fr] lg:gap-10"
+            data-reveal
+            style={`--reveal-delay:${i * 40}ms`}
+          >
+            {/* Número da etapa */}
+            <div class="lg:w-20">
+              <span
+                aria-hidden="true"
+                class="tabular font-display text-display-md text-line-strong"
+              >
+                {etapa.numero}
+              </span>
+            </div>
+
+            <div>
+              <h3 class="font-display text-display-sm text-ink">{etapa.titulo}</h3>
+              <p class="mt-3 text-[1.0625rem] leading-relaxed text-ink-2">
+                {etapa.resumo}
+              </p>
+
+              <p class="mt-5 flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-md bg-surface-2 px-3.5 py-2.5 text-[0.8125rem] leading-relaxed text-ink-2">
+                <span class="font-600 text-ink">Entrega desta etapa:</span>
+                <span>{etapa.entregavel}</span>
+              </p>
+            </div>
+
+            <div class="lg:border-l lg:border-line lg:pl-10">
+              <h4 class="font-sans text-[0.75rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+                O que é feito
+              </h4>
+              <ul role="list" class="mt-3.5 flex flex-col gap-2.5">
+                {etapa.detalhes.map((d) => (
+                  <li class="flex items-start gap-2.5 text-[0.9375rem] leading-relaxed text-ink-2">
+                    <Icon name="check" size={15} class="mt-1 shrink-0 text-brand" />
+                    <span>{d}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  {/* ---- O que esperamos de você ----
+      Seção incomum e deliberada: projeto de site atrasa muito mais por
+      conteúdo e aprovação pendentes do lado do cliente do que por
+      desenvolvimento. Dizer isso antes evita a frustração depois. */}
+  <Section>
+    <div class="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+      <SectionHeader
+        eyebrow="Combinado de mão dupla"
+        title="O que precisamos de você"
+        lead="Projeto atrasa muito mais por pendência do lado do cliente do que por desenvolvimento. Preferimos combinar isso no começo a cobrar depois."
+        class="max-w-none lg:sticky lg:top-28 lg:self-start"
+      />
+
+      <ul role="list" class="grid gap-4 sm:grid-cols-2" data-reveal-stagger>
+        {
+          [
+            {
+              titulo: 'Uma pessoa que decide',
+              texto:
+                'Alguém com autonomia para aprovar. Aprovação por comitê multiplica o prazo sem melhorar o resultado.',
+            },
+            {
+              titulo: 'Conteúdo e materiais no prazo',
+              texto:
+                'Textos, fotos, logo em vetor e acessos. A gente ajuda a escrever, mas a informação bruta do negócio vem de você.',
+            },
+            {
+              titulo: 'Feedback específico',
+              texto:
+                '“O título não deixa claro que atendemos empresas” é acionável. “Não gostei” não é — e faz a gente adivinhar.',
+            },
+            {
+              titulo: 'Acesso ao domínio e à hospedagem',
+              texto:
+                'Precisamos disso para publicar. Se você não tem, resolvemos junto — e tudo fica no seu nome.',
+            },
+          ].map((item) => (
+            <li class="card p-6">
+              <h3 class="font-display text-base font-600 leading-snug text-ink">
+                {item.titulo}
+              </h3>
+              <p class="mt-2 text-[0.9375rem] leading-relaxed text-ink-2">
+                {item.texto}
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </Section>
+
+  <Guarantees />
+
+  <Section>
+    <CtaBand
+      title="Quer ver esse método aplicado ao seu caso?"
+      text="A primeira etapa — o diagnóstico — não tem custo. Você sai dela com uma leitura honesta do que o seu site precisa, mesmo que decida não seguir com a gente."
+      whatsappMessage="Olá! Li o método da NivoTech e queria marcar um diagnóstico."
+    />
+  </Section>
+</BaseLayout>

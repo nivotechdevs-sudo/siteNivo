@@ -1,0 +1,62 @@
+---
+/**
+ * Layout das páginas legais.
+ *
+ * `noindex` em todas: não têm valor de busca e diluiriam o orçamento de
+ * rastreio. Continuam acessíveis e linkadas no rodapé, que é o que a LGPD
+ * exige — a exigência é de acesso fácil, não de indexação.
+ *
+ * Importante: elas NÃO estão bloqueadas no robots.txt. Página bloqueada lá
+ * nunca é lida, então o Google jamais veria o `noindex` — e poderia indexar
+ * a URL mesmo assim. Deixar rastrear e marcar noindex é a combinação certa.
+ */
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumbs from '../components/seo/Breadcrumbs.astro';
+
+export interface Props {
+  title: string;
+  description: string;
+  path: string;
+  updatedAt: string;
+}
+
+const { title, description, path, updatedAt } = Astro.props;
+
+const crumbs = [
+  { name: 'Início', url: '/' },
+  { name: title, url: path },
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  noindex
+  hideFooterCta
+>
+  <div class="container-site">
+    <div class="mx-auto max-w-(--container-prose) py-12 sm:py-16">
+      <Breadcrumbs items={crumbs} class="mb-7" />
+
+      <h1 class="text-display-lg text-balance">{title}</h1>
+
+      <p class="mt-4 text-[0.875rem] text-ink-3">
+        Última atualização:{' '}
+        <time datetime={updatedAt}>
+          {
+            new Date(updatedAt).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric',
+            })
+          }
+        </time>
+      </p>
+
+      <div class="prose mt-10">
+        <slot />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

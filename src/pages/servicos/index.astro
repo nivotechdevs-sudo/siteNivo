@@ -1,0 +1,142 @@
+---
+/**
+ * Hub de serviços.
+ *
+ * Papel na arquitetura de informação: é a página-mãe que distribui
+ * autoridade para as páginas de serviço e concentra as buscas mais amplas
+ * ("agência de criação de sites"). As filhas atacam as buscas específicas.
+ *
+ * Padrão hub-and-spoke: o hub linka para todas as filhas, cada filha linka de
+ * volta para o hub e lateralmente para a irmã. O Google entende a relação de
+ * tópico, e o visitante navega sem voltar ao menu.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/sections/PageHero.astro';
+import Section from '../../components/ui/Section.astro';
+import Icon from '../../components/ui/Icon.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import Differentials from '../../components/sections/Differentials.astro';
+
+import { SERVICOS } from '../../data/content';
+import { webPage, breadcrumbList, service } from '../../lib/schema';
+
+const path = '/servicos/';
+
+const crumbs = [
+  { name: 'Início', url: '/' },
+  { name: 'Serviços', url: path },
+];
+
+const schemas = [
+  webPage({
+    url: path,
+    title: 'Serviços',
+    description: 'Criação de sites e landing pages de alta conversão.',
+    type: 'CollectionPage',
+    breadcrumb: crumbs,
+  }),
+  breadcrumbList(path, crumbs),
+  // Uma entidade Service por serviço: cada uma pode aparecer sozinha
+  // nos resultados, ligada à mesma organização.
+  ...SERVICOS.map((s) =>
+    service({
+      name: s.nome,
+      description: s.promessa,
+      url: `/servicos/${s.slug}/`,
+      serviceType: s.keywordPrimaria,
+    }),
+  ),
+];
+---
+
+<BaseLayout
+  title="Serviços — Criação de sites e landing pages"
+  description="Criação de sites institucionais e landing pages com engenharia de performance, SEO técnico e foco em conversão. Veja o que está incluso em cada serviço."
+  path={path}
+  image="/og/servicos.png"
+  schemas={schemas}
+>
+  <PageHero
+    eyebrow="Serviços"
+    title="Dois serviços, feitos com profundidade"
+    lead="Não somos uma agência que faz de tudo. Fazemos sites institucionais e landing pages — e é justamente esse foco que permite entregar o nível técnico que trabalho generalista não alcança."
+    breadcrumbs={crumbs}
+    seed={11}
+  />
+
+  <Section>
+    <div class="flex flex-col gap-6">
+      {
+        SERVICOS.map((servico) => (
+          <article
+            class="card card--interactive spotlight group relative grid gap-8 p-8 sm:p-10 lg:grid-cols-[1fr_1.1fr] lg:gap-12"
+            data-reveal
+          >
+            <div>
+              <span
+                aria-hidden="true"
+                class="grid size-12 place-items-center rounded-lg bg-brand-subtle text-brand-subtle-ink"
+              >
+                <Icon name={servico.icone} size={23} />
+              </span>
+
+              <h2 class="mt-6 text-display-md text-balance">
+                <a
+                  href={`/servicos/${servico.slug}/`}
+                  class="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+                >
+                  {servico.titulo}
+                </a>
+              </h2>
+
+              <p class="mt-4 text-[1.0625rem] leading-relaxed text-ink-2">
+                {servico.promessa}
+              </p>
+
+              <p
+                class="mt-6 inline-flex items-center gap-2 font-600 text-brand"
+                aria-hidden="true"
+              >
+                Ver a página completa
+                <Icon
+                  name="arrow-right"
+                  size={17}
+                  class="transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1"
+                />
+              </p>
+            </div>
+
+            <div class="lg:border-l lg:border-line lg:pl-12">
+              <h3 class="font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+                Está incluso
+              </h3>
+              <ul role="list" class="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                {servico.entregaveis.map((item) => (
+                  <li class="flex items-start gap-2.5 text-[0.9375rem] leading-relaxed text-ink-2">
+                    <Icon name="check" size={16} class="mt-1 shrink-0 text-brand" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <span
+              aria-hidden="true"
+              class="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 ring-2 ring-focus ring-offset-2 ring-offset-canvas transition-opacity group-has-[a:focus-visible]:opacity-100"
+            />
+          </article>
+        ))
+      }
+    </div>
+  </Section>
+
+  <Differentials />
+
+  <Section>
+    <CtaBand
+      title="Não tem certeza de qual serviço resolve o seu caso?"
+      text="Conte o que você precisa e a gente diz qual caminho faz sentido — ou se nenhum dos dois faz. Preferimos recusar um projeto a entregar algo que não vai funcionar."
+      whatsappMessage="Olá! Vi a página de serviços da NivoTech e queria entender qual se aplica ao meu caso."
+    />
+  </Section>
+</BaseLayout>

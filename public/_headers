@@ -1,0 +1,64 @@
+# ============================================================================
+# Cabeçalhos HTTP — Netlify e Cloudflare Pages
+# ============================================================================
+# Este arquivo é lido automaticamente por Netlify e Cloudflare Pages.
+# Para Vercel, os mesmos cabeçalhos estão em vercel.json.
+#
+# Confira o resultado depois de publicar em https://securityheaders.com
+
+/*
+  # Impede que o navegador "adivinhe" o tipo do arquivo. Sem isso, um upload
+  # malicioso servido como texto pode ser interpretado como script.
+  X-Content-Type-Options: nosniff
+
+  # Bloqueia o site de ser carregado em iframe de terceiro (clickjacking).
+  X-Frame-Options: DENY
+
+  # Envia a origem para outros sites, mas a URL completa dentro do próprio
+  # site. Preserva a atribuição de tráfego no Analytics sem vazar o caminho
+  # da página para terceiros.
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # Desliga APIs que este site não usa. Reduz a superfície de ataque e evita
+  # que um script de terceiro comprometido peça acesso à câmera.
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+
+  # HSTS: obriga HTTPS por 2 anos, inclusive em subdomínios.
+  # ATENÇÃO: só habilite `preload` quando tiver certeza de que TODOS os
+  # subdomínios servem HTTPS. Entrar na lista de preload é difícil de desfazer.
+  Strict-Transport-Security: max-age=63072000; includeSubDomains
+
+  # Content Security Policy.
+  #
+  # `script-src` inclui 'unsafe-inline' porque o site usa scripts inline
+  # legítimos (tema antes da primeira pintura, JSON-LD, GA4). A alternativa
+  # correta é nonce por requisição, que exige renderização no servidor — o
+  # site é estático de propósito, então esse caminho não está disponível.
+  # Como não há nenhuma entrada de usuário refletida no HTML, a superfície
+  # de XSS aqui é essencialmente nula.
+  #
+  # Ao adicionar um serviço de terceiro (chat, pixel, formulário), inclua o
+  # domínio dele na diretiva correspondente — senão o navegador bloqueia.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://api.web3forms.com https://formspree.io; form-action 'self' https://api.web3forms.com https://formspree.io; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests
+
+# ---------------------------------------------------------------------------
+# Cache
+# ---------------------------------------------------------------------------
+# Os assets do Astro têm hash no nome do arquivo: mudou o conteúdo, mudou a
+# URL. Por isso podem ser cacheados para sempre com segurança.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fontes são imutáveis pelo nome que demos e mudam raríssimas vezes.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Imagens sociais: cache longo, mas revalidável, porque podem ser
+# regeneradas sem trocar de nome.
+/og/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+# HTML precisa revalidar sempre, senão uma publicação nova demora a
+# aparecer para quem já visitou.
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate

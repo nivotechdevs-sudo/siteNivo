@@ -1,0 +1,16 @@
+{
+  "name": "NivoTech — Engenharia de sites de alta conversão",
+  "short_name": "NivoTech",
+  "description": "Criação de sites e landing pages de alta conversão com engenharia de performance e SEO.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07090d",
+  "theme_color": "#07090d",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

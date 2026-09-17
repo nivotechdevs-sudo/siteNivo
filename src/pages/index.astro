@@ -1,0 +1,67 @@
+---
+/**
+ * Home.
+ *
+ * Ordem das seções desenhada como jornada de decisão, não como catálogo:
+ *
+ *   1. Hero            — promessa + prova imediata (o instrumento)
+ *   2. Diagnóstico     — nomeia o problema que a pessoa já vive
+ *   3. Serviços        — a solução, com link para as páginas pillar
+ *   4. Diferenciais    — por que nós, em decisões verificáveis
+ *   5. Método          — reduz o medo de "como isso vai funcionar"
+ *   6. Prova social    — aparece sozinha quando houver dado real
+ *   7. Garantias       — remove o risco percebido
+ *   8. FAQ             — derruba as últimas objeções e alimenta rich result
+ *   9. CTA final       — no rodapé, para quem chegou até aqui
+ *
+ * Problema → solução → credibilidade → segurança → ação. Um catálogo de
+ * serviços logo depois do hero converteria muito pior: ninguém compra
+ * solução antes de reconhecer o próprio problema.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/sections/Hero.astro';
+import ProblemSolution from '../components/sections/ProblemSolution.astro';
+import Services from '../components/sections/Services.astro';
+import Differentials from '../components/sections/Differentials.astro';
+import MethodPreview from '../components/sections/MethodPreview.astro';
+import SocialProof from '../components/sections/SocialProof.astro';
+import Guarantees from '../components/sections/Guarantees.astro';
+import Faq from '../components/sections/Faq.astro';
+
+import { webPage, faqPage } from '../lib/schema';
+import { FAQ } from '../data/content';
+
+const path = '/';
+
+// A home mostra as seis perguntas de maior intenção; as oito completas ficam
+// na página de contato. O schema declara exatamente o que está visível aqui.
+const faqHome = FAQ.slice(0, 6);
+
+const schemas = [
+  webPage({
+    url: path,
+    title: 'Criação de sites de alta conversão',
+    description:
+      'Criamos sites e landing pages de alta conversão com engenharia de performance e SEO.',
+  }),
+  faqPage(path, faqHome),
+];
+---
+
+<BaseLayout
+  title="NivoTech — Criação de sites de alta conversão"
+  description="Criamos sites e landing pages de alta conversão. Design premium, carregamento instantâneo e SEO na fundação. Fale com a gente e receba um diagnóstico sem custo."
+  path={path}
+  image="/og/default.png"
+  isHome
+  schemas={schemas}
+>
+  <Hero />
+  <ProblemSolution />
+  <Services />
+  <Differentials />
+  <MethodPreview />
+  <SocialProof />
+  <Guarantees />
+  <Faq items={faqHome} surface="surface-2" />
+</BaseLayout>

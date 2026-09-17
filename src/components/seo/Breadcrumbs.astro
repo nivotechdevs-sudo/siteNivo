@@ -1,0 +1,53 @@
+---
+/**
+ * Trilha de navegação visível.
+ *
+ * Existe por duas razões, e ambas importam:
+ *  - UX: mostra onde a pessoa está e dá saída de um nível sem usar o "voltar"
+ *  - SEO: o JSON-LD correspondente troca a URL crua por um caminho legível
+ *    na SERP, o que mede melhor em CTR
+ *
+ * O item atual não é link — é o lugar onde a pessoa já está. Marcamos com
+ * `aria-current="page"` para o leitor de tela anunciar isso.
+ */
+export interface Props {
+  items: readonly { name: string; url: string }[];
+  class?: string;
+}
+
+const { items, class: className = '' } = Astro.props;
+---
+
+<nav aria-label="Trilha de navegação" class={className}>
+  <ol
+    role="list"
+    class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] text-ink-3"
+  >
+    {
+      items.map((item, i) => {
+        const isLast = i === items.length - 1;
+        return (
+          <li class="flex items-center gap-2">
+            {isLast ? (
+              <span aria-current="page" class="text-ink-2 font-medium">
+                {item.name}
+              </span>
+            ) : (
+              <>
+                <a
+                  href={item.url}
+                  class="transition-colors hover:text-ink focus-visible:text-ink"
+                >
+                  {item.name}
+                </a>
+                <span aria-hidden="true" class="text-line-strong select-none">
+                  /
+                </span>
+              </>
+            )}
+          </li>
+        );
+      })
+    }
+  </ol>
+</nav>

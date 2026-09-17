@@ -1,0 +1,55 @@
+---
+/**
+ * Marca NivoTech.
+ *
+ * Conceito: "Nivo" vem de nível. O símbolo são três patamares ascendentes —
+ * a leitura literal de "elevar ao próximo nível", que é o posicionamento da
+ * empresa. O patamar mais alto é o único em cor de sinal: é o destino, não o
+ * ponto de partida.
+ *
+ * Desenhado em SVG inline, não como arquivo de imagem. Três motivos:
+ *   - herda `currentColor`, então acompanha o tema sem segundo arquivo
+ *   - zero requisição de rede
+ *   - nítido em qualquer densidade de tela
+ */
+export interface Props {
+  /** Só o símbolo, sem o nome. */
+  markOnly?: boolean;
+  class?: string;
+  /** Altura em px do símbolo. */
+  size?: number;
+}
+
+const { markOnly = false, class: className = '', size = 28 } = Astro.props;
+---
+
+<span class={`inline-flex items-center gap-2.5 ${className}`}>
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 32 32"
+    fill="none"
+    aria-hidden="true"
+    class="shrink-0 overflow-visible"
+  >
+    {/* Patamar 1 — base */}
+    <rect x="2" y="21" width="8" height="8" rx="2" fill="currentColor" opacity="0.32"
+    ></rect>
+    {/* Patamar 2 — intermediário */}
+    <rect x="12" y="13" width="8" height="16" rx="2" fill="currentColor" opacity="0.62"
+    ></rect>
+    {/* Patamar 3 — o nível alcançado. Único em cor de sinal. */}
+    <rect x="22" y="3" width="8" height="26" rx="2" fill="var(--c-brand-solid)"
+    ></rect>
+    {/* Marcador do topo: a leitura do instrumento. */}
+    <circle cx="26" cy="7" r="1.75" fill="var(--c-signal-solid)"></circle>
+  </svg>
+
+  {
+    !markOnly && (
+      <span class="font-display text-[1.0625rem] font-700 tracking-[-0.03em] text-ink leading-none">
+        Nivo<span class="text-brand">Tech</span>
+      </span>
+    )
+  }
+</span>

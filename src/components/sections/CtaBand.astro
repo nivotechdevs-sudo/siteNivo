@@ -1,0 +1,62 @@
+---
+/**
+ * Faixa de conversão para o meio das páginas.
+ *
+ * Existe porque página longa precisa de ponto de saída no meio: forçar a
+ * pessoa a rolar até o rodapé para encontrar um CTA é fricção desnecessária,
+ * e quem já se convenceu na metade do texto não deveria ter que procurar.
+ */
+import Button from '../ui/Button.astro';
+import { whatsappUrl, CONTACT } from '../../data/site';
+
+export interface Props {
+  title?: string;
+  text?: string;
+  /** Mensagem que já vai preenchida no WhatsApp — contexto da página. */
+  whatsappMessage?: string;
+}
+
+const {
+  title = 'Quer saber se isso se aplica ao seu caso?',
+  text = 'Mande uma mensagem contando o que você tem hoje. Respondemos com um diagnóstico honesto — inclusive se a resposta for que você não precisa de um site novo.',
+  whatsappMessage,
+} = Astro.props;
+---
+
+<aside
+  class="border-gradient relative overflow-hidden rounded-xl bg-surface p-8 sm:p-10"
+  data-reveal
+>
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute -right-20 -top-24 size-64 rounded-full opacity-25 blur-[70px]"
+    style="background: radial-gradient(circle, var(--c-brand-solid), transparent 68%)"
+  >
+  </div>
+
+  <div class="relative max-w-xl">
+    <h2 class="text-display-md text-balance">{title}</h2>
+    <p class="mt-4 text-[1.0625rem] leading-relaxed text-ink-2 text-pretty">
+      {text}
+    </p>
+
+    <div class="mt-7 flex flex-col gap-3 sm:flex-row">
+      <Button
+        href={whatsappUrl(whatsappMessage)}
+        external
+        variant="primary"
+        icon="whatsapp"
+        dataCta="band-whatsapp"
+      >
+        Falar no WhatsApp
+      </Button>
+      <Button href="/contato/" variant="secondary" icon="arrow-right" dataCta="band-briefing">
+        Enviar briefing
+      </Button>
+    </div>
+
+    <p class="mt-4 text-sm text-ink-3">
+      {CONTACT.hours} · Resposta {CONTACT.responseTime}
+    </p>
+  </div>
+</aside>

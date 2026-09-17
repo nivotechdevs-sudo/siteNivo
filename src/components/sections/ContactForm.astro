@@ -1,0 +1,587 @@
+---
+/**
+ * ============================================================================
+ * FORMULÁRIO DE BRIEFING
+ * ============================================================================
+ *
+ * Decisões de conversão e o porquê de cada uma:
+ *
+ * 1. UMA PÁGINA, NÃO MULTI-STEP. Formulário em etapas parece moderno e
+ *    costuma converter PIOR em B2B: esconde o tamanho do compromisso, e
+ *    quem decide quer ver tudo antes de começar. Também é mais difícil de
+ *    tornar acessível. Agrupamos em <fieldset> com <legend> — a pessoa
+ *    enxerga o todo e o leitor de tela anuncia os grupos.
+ *
+ * 2. SÓ 4 CAMPOS OBRIGATÓRIOS. Cada campo obrigatório a mais derruba a taxa
+ *    de envio. Telefone, empresa e orçamento são opcionais — quem quiser
+ *    detalhar, detalha.
+ *
+ * 3. O CAMPO DE ORÇAMENTO É OPCIONAL E COM FAIXAS. Qualifica o lead sem
+ *    espantar quem ainda não sabe quanto quer investir.
+ *
+ * 4. ANTISPAM SEM CAPTCHA. reCAPTCHA custa ~250 KB de JavaScript de
+ *    terceiro, prejudica INP, é hostil à acessibilidade e vaza dados para o
+ *    Google. Usamos duas defesas locais de custo zero:
+ *      a) honeypot — campo invisível para humanos que bots preenchem
+ *      b) tempo mínimo — bot envia em menos de 3s; pessoa não
+ *    Bloqueiam a esmagadora maioria dos bots genéricos. Se algum dia passar
+ *    spam direcionado, a resposta certa é validação no servidor, não
+ *    captcha.
+ *
+ * 5. DEGRADAÇÃO HONESTA. Sem `FORM.endpoint` configurado, o formulário não
+ *    finge funcionar: mostra um aviso claro e oferece WhatsApp e e-mail.
+ *    Formulário que engole mensagem em silêncio é pior que não ter.
+ */
+import Icon from '../ui/Icon.astro';
+import { FORM, CONTACT, whatsappUrl } from '../../data/site';
+
+const configurado = FORM.endpoint !== '';
+---
+
+<div class="card p-7 sm:p-9">
+  {
+    !configurado && (
+      /* Aviso de configuração pendente. Visível para o visitante porque a
+         alternativa — um formulário que aceita o envio e joga fora — perde
+         lead sem ninguém perceber. */
+      <div
+        role="status"
+        class="mb-7 flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/8 p-4"
+      >
+        <Icon name="alert" size={18} class="mt-0.5 shrink-0 text-danger" />
+        <div class="text-[0.9375rem] leading-relaxed">
+          <p class="font-600 text-ink">Formulário ainda não configurado</p>
+          <p class="mt-1 text-ink-2">
+            Enquanto isso, fale com a gente pelo{' '}
+            <a href={whatsappUrl()} target="_blank" rel="noopener noreferrer" class="link-underline">
+              WhatsApp
+            </a>{' '}
+            ou por e-mail em{' '}
+            <a href={`mailto:${CONTACT.email}`} class="link-underline">
+              {CONTACT.email}
+            </a>
+            .
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  <form
+    id="briefing"
+    method="POST"
+    action={FORM.endpoint || undefined}
+    novalidate
+    data-form
+    data-configured={String(configurado)}
+    data-success={FORM.successUrl}
+    class="flex flex-col gap-7"
+  >
+    {/* Resumo de erros.
+        Aparece no topo com a lista de campos com problema, cada um linkando
+        para o campo. É o padrão recomendado pelo WCAG: quem usa leitor de
+        tela não descobre sozinho que há erro no meio do formulário. */}
+    <div
+      id="form-errors"
+      role="alert"
+      hidden
+      tabindex="-1"
+      class="rounded-lg border border-danger/30 bg-danger/8 p-4"
+    >
+      <p class="flex items-center gap-2 font-600 text-ink">
+        <Icon name="alert" size={17} class="text-danger" />
+        <span data-error-title>Revise os campos abaixo</span>
+      </p>
+      <ul role="list" class="mt-2 flex flex-col gap-1 pl-7 text-[0.9375rem] text-ink-2" data-error-list></ul>
+    </div>
+
+    {/* ---- Grupo: identificação ---- */}
+    <fieldset class="flex flex-col gap-5 border-0 p-0">
+      <legend class="font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+        Sobre você
+      </legend>
+
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label for="nome" class="field-label">
+            Nome <span class="text-danger" aria-hidden="true">*</span>
+          </label>
+          <input
+            type="text"
+            id="nome"
+            name="nome"
+            required
+            autocomplete="name"
+            class="field-input"
+            data-label="Nome"
+          />
+          <p class="field-error" data-error-for="nome" hidden></p>
+        </div>
+
+        <div>
+          <label for="email" class="field-label">
+            E-mail <span class="text-danger" aria-hidden="true">*</span>
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            autocomplete="email"
+            inputmode="email"
+            class="field-input"
+            data-label="E-mail"
+          />
+          <p class="field-error" data-error-for="email" hidden></p>
+        </div>
+      </div>
+
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label for="telefone" class="field-label">WhatsApp</label>
+          <input
+            type="tel"
+            id="telefone"
+            name="telefone"
+            autocomplete="tel"
+            inputmode="tel"
+            placeholder="(11) 90000-0000"
+            class="field-input"
+            data-label="WhatsApp"
+            aria-describedby="telefone-hint"
+          />
+          <p id="telefone-hint" class="field-hint">
+            Opcional — acelera bastante a conversa.
+          </p>
+        </div>
+
+        <div>
+          <label for="empresa" class="field-label">Empresa ou site atual</label>
+          <input
+            type="text"
+            id="empresa"
+            name="empresa"
+            autocomplete="organization"
+            placeholder="nomedaempresa.com.br"
+            class="field-input"
+            data-label="Empresa"
+            aria-describedby="empresa-hint"
+          />
+          <p id="empresa-hint" class="field-hint">
+            Se já tem site, a gente olha antes da conversa.
+          </p>
+        </div>
+      </div>
+    </fieldset>
+
+    {/* ---- Grupo: projeto ---- */}
+    <fieldset class="flex flex-col gap-5 border-0 p-0">
+      <legend class="font-sans text-[0.8125rem] font-600 uppercase tracking-[0.1em] text-ink-3">
+        Sobre o projeto
+      </legend>
+
+      <div>
+        <span id="tipo-label" class="field-label">
+          O que você precisa <span class="text-danger" aria-hidden="true">*</span>
+        </span>
+        {/* Radios em <div role="radiogroup"> rotulado: o leitor de tela
+            anuncia "grupo" e a quantidade de opções antes de ler cada uma. */}
+        <div
+          role="radiogroup"
+          aria-labelledby="tipo-label"
+          aria-required="true"
+          class="mt-2 grid gap-2 sm:grid-cols-2"
+        >
+          {
+            [
+              ['site-novo', 'Um site novo', 'Ainda não tenho site'],
+              ['refazer', 'Refazer o site atual', 'Tenho, mas não funciona'],
+              ['landing', 'Uma landing page', 'Para campanha ou lançamento'],
+              ['nao-sei', 'Ainda não sei', 'Quero entender as opções'],
+            ].map(([value, titulo, sub]) => (
+              <label class="opt group/opt">
+                <input
+                  type="radio"
+                  name="tipo"
+                  value={value}
+                  required
+                  class="sr-only"
+                  data-label="Tipo de projeto"
+                />
+                <span class="opt__box" aria-hidden="true">
+                  <span class="opt__dot" />
+                </span>
+                <span class="min-w-0">
+                  <span class="block text-[0.9375rem] font-600 text-ink">{titulo}</span>
+                  <span class="block text-[0.8125rem] text-ink-3">{sub}</span>
+                </span>
+              </label>
+            ))
+          }
+        </div>
+        <p class="field-error" data-error-for="tipo" hidden></p>
+      </div>
+
+      <div>
+        <label for="investimento" class="field-label">Investimento previsto</label>
+        <select
+          id="investimento"
+          name="investimento"
+          class="field-input"
+          data-label="Investimento"
+          aria-describedby="investimento-hint"
+        >
+          <option value="">Prefiro não informar</option>
+          <option value="ate-5k">Até R$ 5.000</option>
+          <option value="5k-12k">R$ 5.000 a R$ 12.000</option>
+          <option value="12k-30k">R$ 12.000 a R$ 30.000</option>
+          <option value="acima-30k">Acima de R$ 30.000</option>
+          <option value="nao-sei">Ainda não tenho ideia</option>
+        </select>
+        <p id="investimento-hint" class="field-hint">
+          Opcional. Ajuda a propor um escopo realista já na primeira conversa.
+        </p>
+      </div>
+
+      <div>
+        <label for="mensagem" class="field-label">
+          Conte sobre o projeto <span class="text-danger" aria-hidden="true">*</span>
+        </label>
+        <textarea
+          id="mensagem"
+          name="mensagem"
+          required
+          rows="5"
+          class="field-input"
+          data-label="Mensagem"
+          aria-describedby="mensagem-hint"
+          placeholder="O que sua empresa faz, quem é seu cliente e o que você espera que o site resolva."></textarea>
+        <p id="mensagem-hint" class="field-hint">
+          Quanto mais contexto, mais útil é a nossa primeira resposta.
+        </p>
+        <p class="field-error" data-error-for="mensagem" hidden></p>
+      </div>
+    </fieldset>
+
+    {/* ---- Consentimento LGPD ----
+        Caixa não marcada por padrão, como a LGPD exige: consentimento
+        precisa ser ato afirmativo, não configuração pré-existente. */}
+    <div>
+      <label class="flex cursor-pointer items-start gap-3">
+        <input
+          type="checkbox"
+          name="consentimento"
+          required
+          class="mt-0.5 size-[1.125rem] shrink-0 cursor-pointer accent-[var(--c-brand-solid)]"
+          data-label="Consentimento"
+        />
+        <span class="text-[0.875rem] leading-relaxed text-ink-2">
+          Autorizo a NivoTech a usar estes dados para responder ao meu contato,
+          conforme a{' '}
+          <a href="/politica-de-privacidade/" class="link-underline">
+            política de privacidade
+          </a>
+          . <span class="text-danger" aria-hidden="true">*</span>
+        </span>
+      </label>
+      <p class="field-error" data-error-for="consentimento" hidden></p>
+    </div>
+
+    {/* ---- Antispam ----
+        Honeypot: escondido por CSS (não por `hidden`, que alguns bots
+        detectam) e fora da ordem de tabulação. `aria-hidden` garante que
+        nenhum leitor de tela o anuncie para um usuário humano. */}
+    <div class="hp" aria-hidden="true">
+      <label for="site-url">Não preencha este campo</label>
+      <input type="text" id="site-url" name="site_url" tabindex="-1" autocomplete="off" />
+    </div>
+    <input type="hidden" name="_iniciado" data-timestamp value="" />
+
+    {/* Assunto do e-mail, para provedores que usam este campo. */}
+    <input type="hidden" name="_subject" value="Novo briefing pelo site da NivoTech" />
+
+    <div class="flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
+      <button
+        type="submit"
+        class="btn btn--primary btn--lg group"
+        data-submit
+        disabled={!configurado}
+        aria-describedby={!configurado ? 'submit-disabled' : undefined}
+      >
+        <span data-submit-label>Enviar briefing</span>
+        <Icon
+          name="arrow-right"
+          size={17}
+          class="transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1"
+        />
+      </button>
+
+      <p class="text-[0.8125rem] leading-relaxed text-ink-3">
+        {
+          configurado
+            ? `Resposta ${CONTACT.responseTime}. Seus dados não são compartilhados.`
+            : 'Use o WhatsApp ou o e-mail acima enquanto isso.'
+        }
+      </p>
+      {!configurado && <span id="submit-disabled" class="sr-only">Formulário indisponível: endpoint não configurado.</span>}
+    </div>
+  </form>
+</div>
+
+<style>
+  /* Honeypot: fora da tela sem `display:none`, que bots já ignoram. */
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* Opção de rádio desenhada.
+     O <input> real continua no DOM (apenas com .sr-only) — é ele que recebe
+     foco, responde às setas e é anunciado. Só a aparência é customizada.
+     Trocar o input por divs quebraria teclado e leitor de tela. */
+  .opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--c-line-strong);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition:
+      border-color 180ms var(--ease-out-quint),
+      background-color 180ms var(--ease-out-quint);
+  }
+
+  .opt:hover {
+    border-color: var(--c-ink-3);
+    background-color: var(--c-surface-2);
+  }
+
+  .opt:has(input:checked) {
+    border-color: var(--c-brand-solid);
+    background-color: var(--c-brand-subtle);
+  }
+
+  /* O anel de foco precisa aparecer no cartão, já que o input está oculto. */
+  .opt:has(input:focus-visible) {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+
+  .opt__box {
+    display: grid;
+    place-items: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+    border: 1.5px solid var(--c-line-strong);
+    border-radius: 999px;
+    transition: border-color 180ms var(--ease-out-quint);
+  }
+
+  .opt:has(input:checked) .opt__box {
+    border-color: var(--c-brand-solid);
+  }
+
+  .opt__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background-color: var(--c-brand-solid);
+    transform: scale(0);
+    transition: transform 200ms var(--ease-spring);
+  }
+
+  .opt:has(input:checked) .opt__dot {
+    transform: scale(1);
+  }
+</style>
+
+<script>
+  /**
+   * Validação e envio.
+   *
+   * Princípio: o `novalidate` no <form> desliga as mensagens nativas do
+   * navegador, mas TODAS as restrições HTML continuam no markup
+   * (`required`, `type="email"`). Assim a validação nativa segue valendo
+   * como rede de segurança se este script não carregar, e podemos escrever
+   * mensagens em português decente com marcação acessível correta.
+   */
+  const form = document.querySelector<HTMLFormElement>('[data-form]');
+
+  if (form) {
+    const errorBox = document.getElementById('form-errors')!;
+    const errorList = form.querySelector<HTMLElement>('[data-error-list]')!;
+    const errorTitle = form.querySelector<HTMLElement>('[data-error-title]')!;
+    const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+    const submitLabel = form.querySelector<HTMLElement>('[data-submit-label]')!;
+    const timestamp = form.querySelector<HTMLInputElement>('[data-timestamp]')!;
+
+    // Marca o momento em que o formulário ficou disponível. Ver validação
+    // de tempo mínimo abaixo.
+    const openedAt = Date.now();
+    timestamp.value = String(openedAt);
+
+    const MESSAGES: Record<string, string> = {
+      nome: 'Informe o seu nome.',
+      email: 'Informe um e-mail válido.',
+      tipo: 'Escolha o que você precisa.',
+      mensagem: 'Conte um pouco sobre o projeto.',
+      consentimento: 'É necessário autorizar o uso dos dados para responder.',
+    };
+
+    /** Mostra ou limpa o erro de um campo. */
+    function setFieldError(name: string, message: string | null): void {
+      const hint = form!.querySelector<HTMLElement>(`[data-error-for="${name}"]`);
+      const fields = form!.querySelectorAll<HTMLElement>(`[name="${name}"]`);
+
+      // O id precisa existir ANTES de montar o aria-describedby — senão o
+      // campo é ligado a um id vazio e o leitor de tela não anuncia nada.
+      if (hint && !hint.id) hint.id = `erro-${name}`;
+
+      for (const field of fields) {
+        if (message) field.setAttribute('aria-invalid', 'true');
+        else field.removeAttribute('aria-invalid');
+
+        // Liga o campo à mensagem para o leitor de tela anunciá-la ao focar.
+        if (hint?.id) {
+          const described = (field.getAttribute('aria-describedby') ?? '')
+            .split(' ')
+            .filter((id) => id && id !== hint.id);
+          if (message) described.push(hint.id);
+          if (described.length) field.setAttribute('aria-describedby', described.join(' '));
+          else field.removeAttribute('aria-describedby');
+        }
+      }
+
+      if (!hint) return;
+      if (message) {
+        hint.textContent = message;
+        hint.hidden = false;
+      } else {
+        hint.hidden = true;
+        hint.textContent = '';
+      }
+    }
+
+    /** Valida tudo e devolve a lista de campos com problema. */
+    function validate(): { name: string; message: string }[] {
+      const problems: { name: string; message: string }[] = [];
+
+      for (const [name, message] of Object.entries(MESSAGES)) {
+        const field = form!.elements.namedItem(name);
+        let valid = true;
+
+        if (field instanceof RadioNodeList) {
+          valid = Array.from(field).some((r) => (r as HTMLInputElement).checked);
+        } else if (field instanceof HTMLInputElement && field.type === 'checkbox') {
+          valid = field.checked;
+        } else if (
+          field instanceof HTMLInputElement ||
+          field instanceof HTMLTextAreaElement
+        ) {
+          // `checkValidity` usa as restrições HTML do markup: `required` e
+          // `type="email"`. Não reimplementamos regex de e-mail — a do
+          // navegador é melhor e já está lá.
+          valid = field.value.trim() !== '' && field.checkValidity();
+        }
+
+        setFieldError(name, valid ? null : message);
+        if (!valid) problems.push({ name, message });
+      }
+
+      return problems;
+    }
+
+    // Valida de novo enquanto a pessoa corrige, mas só depois do primeiro
+    // envio: validar enquanto ela ainda está digitando o primeiro caractere
+    // é hostil.
+    let submitted = false;
+    form.addEventListener('input', (e) => {
+      if (!submitted) return;
+      const target = e.target as HTMLElement & { name?: string };
+      if (target.name && target.name in MESSAGES) validate();
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitted = true;
+
+      const problems = validate();
+
+      if (problems.length > 0) {
+        errorTitle.textContent =
+          problems.length === 1
+            ? 'Há 1 campo para revisar'
+            : `Há ${problems.length} campos para revisar`;
+
+        errorList.innerHTML = '';
+        for (const p of problems) {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = `#${p.name === 'tipo' ? 'tipo-label' : p.name}`;
+          a.className = 'link-underline';
+          a.textContent = p.message;
+          a.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            const target = form!.querySelector<HTMLElement>(`[name="${p.name}"]`);
+            target?.focus();
+            target?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          });
+          li.appendChild(a);
+          errorList.appendChild(li);
+        }
+
+        errorBox.hidden = false;
+        errorBox.focus();
+        return;
+      }
+
+      errorBox.hidden = true;
+
+      // ---- Antispam ----
+      const honeypot = form!.querySelector<HTMLInputElement>('[name="site_url"]');
+      if (honeypot && honeypot.value !== '') return; // bot: descarta em silêncio
+
+      if (Date.now() - openedAt < 3000) {
+        // Humano nenhum preenche isto em menos de 3 segundos.
+        errorTitle.textContent = 'Envio muito rápido';
+        errorList.innerHTML =
+          '<li>Aguarde um instante e envie novamente.</li>';
+        errorBox.hidden = false;
+        errorBox.focus();
+        return;
+      }
+
+      // ---- Envio ----
+      const originalLabel = submitLabel.textContent;
+      submit.disabled = true;
+      submitLabel.textContent = 'Enviando…';
+
+      try {
+        const response = await fetch(form!.action, {
+          method: 'POST',
+          body: new FormData(form!),
+          headers: { Accept: 'application/json' },
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        // Página de obrigado: é onde a conversão é medida no Analytics.
+        window.location.href = form!.dataset.success ?? '/obrigado/';
+      } catch {
+        submit.disabled = false;
+        submitLabel.textContent = originalLabel;
+        errorTitle.textContent = 'Não conseguimos enviar agora';
+        errorList.innerHTML =
+          '<li>Tente novamente em instantes, ou fale com a gente pelo WhatsApp — respondemos por lá do mesmo jeito.</li>';
+        errorBox.hidden = false;
+        errorBox.focus();
+      }
+    });
+  }
+</script>

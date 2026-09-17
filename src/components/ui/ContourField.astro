@@ -1,0 +1,148 @@
+---
+/**
+ * Campo de curvas de nível — o motivo visual da marca.
+ *
+ * Por que curvas de nível: "Nivo" vem de nível. Curva de nível é a forma como
+ * um mapa representa altitude — literalmente o desenho de "elevar ao próximo
+ * nível". É um motivo próprio, e não mais um gradiente roxo de SaaS.
+ *
+ * Como é feito, e por que assim:
+ *
+ *   Os caminhos são CALCULADOS EM TEMPO DE BUILD, aqui no frontmatter. O
+ *   navegador recebe um SVG pronto e estático: nenhum JavaScript, nenhuma
+ *   matemática em tempo de execução, nenhum canvas, nenhuma requisição de
+ *   imagem. O custo em runtime é o de qualquer SVG inline.
+ *
+ *   A animação é `stroke-dashoffset` (o traço se desenha) e um `translate`
+ *   lento ligado à rolagem via `animation-timeline`, que roda no compositor.
+ *   Nada disso toca a thread principal.
+ *
+ * Todo o elemento é `aria-hidden`: é textura, não informação.
+ */
+
+export interface Props {
+  /** Quantidade de curvas. Mais que 12 vira ruído visual. */
+  lines?: number;
+  /** Semente da perturbação — muda a "topografia" entre seções. */
+  seed?: number;
+  class?: string;
+  /** Anima o desenho do traço na entrada. */
+  animate?: boolean;
+}
+
+const { lines = 9, seed = 1, class: className = '', animate = true } = Astro.props;
+
+const W = 1200;
+const H = 700;
+
+/**
+ * Gerador pseudoaleatório com semente.
+ * Precisa ser determinístico: o mesmo build tem que produzir o mesmo SVG,
+ * senão cada rebuild gera um HTML diferente e destrói o cache de CDN.
+ */
+function rng(s: number): () => number {
+  let state = s * 9301 + 49297;
+  return () => {
+    state = (state * 9301 + 49297) % 233280;
+    return state / 233280;
+  };
+}
+
+/**
+ * Uma curva de nível: elipse perturbada por duas senoides de frequências
+ * diferentes. A soma de duas ondas evita o padrão óbvio de uma só — é o que
+ * dá a irregularidade orgânica de um mapa topográfico real.
+ */
+function contour(index: number, total: number, random: () => number): string {
+  const t = index / total;
+
+  // Elevação: raios crescem com o índice, como anéis de altitude.
+  const rx = 90 + t * 520;
+  const ry = 55 + t * 300;
+
+  const cx = W * 0.52;
+  const cy = H * 0.5;
+
+  // Amplitude e fase variam por curva, senão as linhas ficam paralelas.
+  const amp1 = 14 + random() * 26;
+  const amp2 = 6 + random() * 14;
+  const freq1 = 2 + Math.floor(random() * 3);
+  const freq2 = 5 + Math.floor(random() * 4);
+  const phase1 = random() * Math.PI * 2;
+  const phase2 = random() * Math.PI * 2;
+
+  // 60 passos é o ponto de equilíbrio: acima disso o olho não distingue a
+  // suavidade extra, mas cada ponto a mais vira bytes no HTML de TODA página.
+  const STEPS = 60;
+  const points: string[] = [];
+
+  for (let i = 0; i <= STEPS; i++) {
+    const angle = (i / STEPS) * Math.PI * 2;
+    const noise =
+      Math.sin(angle * freq1 + phase1) * amp1 +
+      Math.sin(angle * freq2 + phase2) * amp2;
+
+    const x = cx + Math.cos(angle) * (rx + noise);
+    const y = cy + Math.sin(angle) * (ry + noise * 0.55);
+
+    // Precisão inteira: o viewBox é 1200x700 e sempre sobe em escala, então
+    // a fração de pixel é invisível — e custaria ~40% a mais de bytes.
+    points.push(`${Math.round(x)},${Math.round(y)}`);
+  }
+
+  return `M${points.join('L')}Z`;
+}
+
+const random = rng(seed);
+const paths = Array.from({ length: lines }, (_, i) => {
+  const d = contour(i + 1, lines + 1, random);
+  return {
+    d,
+    // Aproxima o perímetro para o dasharray. Não precisa ser exato: só
+    // precisa ser >= ao comprimento real para o traço começar oculto.
+    dash: Math.round(2200 + i * 420),
+    delay: i * 90,
+    // As curvas externas são mais fracas: dá profundidade sem blur.
+    strong: i >= lines - 3,
+  };
+});
+---
+
+<svg
+  viewBox={`0 0 ${W} ${H}`}
+  class={`h-full w-full ${className}`}
+  fill="none"
+  aria-hidden="true"
+  preserveAspectRatio="xMidYMid slice"
+  focusable="false"
+>
+  {
+    paths.map((p) => (
+      <path
+        d={p.d}
+        stroke={p.strong ? 'var(--c-contour-strong)' : 'var(--c-contour)'}
+        stroke-width={p.strong ? 1.15 : 0.85}
+        vector-effect="non-scaling-stroke"
+        class={animate ? 'draw-line' : ''}
+        style={`--dash:${p.dash};--draw-delay:${p.delay}ms`}
+      />
+    ))
+  }
+
+  {/* Marcador de cota: o ponto de leitura do instrumento. */}
+  <circle
+    cx={W * 0.52}
+    cy={H * 0.5}
+    r="3"
+    fill="var(--c-signal-solid)"
+    opacity="0.9"
+  ></circle>
+  <circle
+    cx={W * 0.52}
+    cy={H * 0.5}
+    r="9"
+    stroke="var(--c-signal-solid)"
+    stroke-width="1"
+    opacity="0.45"
+  ></circle>
+</svg>

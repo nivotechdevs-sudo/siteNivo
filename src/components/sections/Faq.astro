@@ -1,0 +1,109 @@
+---
+/**
+ * FAQ.
+ *
+ * Construído sobre <details>/<summary> nativos. Isso não é preguiça — é a
+ * escolha correta: o elemento nativo já traz teclado, papel de acessibilidade
+ * e estado expandido/recolhido prontos e corretos em todos os navegadores.
+ * Um acordeão feito à mão com divs precisa reimplementar tudo isso, e quase
+ * sempre reimplementa errado.
+ *
+ * Bônus importante: o conteúdo de um <details> fechado CONTINUA no DOM e é
+ * indexado normalmente. Acordeão que injeta conteúdo por JS não é.
+ *
+ * O mesmo array alimenta o schema FAQPage — o Google exige que a resposta do
+ * schema seja idêntica à visível, e ter uma fonte só garante isso.
+ */
+import Section from '../ui/Section.astro';
+import SectionHeader from './SectionHeader.astro';
+import Icon from '../ui/Icon.astro';
+import { FAQ } from '../../data/content';
+
+export interface Props {
+  /** Subconjunto das perguntas — a home mostra menos que a página dedicada. */
+  items?: readonly { pergunta: string; resposta: string }[];
+  surface?: 'canvas' | 'surface-2';
+  title?: string;
+  lead?: string;
+}
+
+const {
+  items = FAQ,
+  surface = 'canvas',
+  title = 'Perguntas que sempre aparecem',
+  lead = 'As dúvidas reais de quem está avaliando contratar. Se a sua não estiver aqui, é só perguntar no WhatsApp.',
+} = Astro.props;
+---
+
+<Section id="faq" labelledby="faq-titulo" surface={surface} divider={surface !== 'canvas'}>
+  <div class="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+    <SectionHeader
+      id="faq-titulo"
+      eyebrow="Dúvidas frequentes"
+      title={title}
+      lead={lead}
+      class="max-w-none lg:sticky lg:top-28 lg:self-start"
+    />
+
+    <div class="flex flex-col divide-y divide-line border-y border-line">
+      {
+        items.map((item) => (
+          <details data-accordion class="group/faq">
+            <summary
+              class="flex cursor-pointer list-none items-start justify-between gap-5 py-5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            >
+              <h3 class="font-display text-[1.0625rem] font-600 leading-snug text-ink transition-colors group-hover/faq:text-brand">
+                {item.pergunta}
+              </h3>
+              <span
+                aria-hidden="true"
+                class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full border border-line text-ink-3 transition-[transform,border-color] duration-300 ease-[var(--ease-out-expo)] group-open/faq:rotate-180 group-open/faq:border-line-strong"
+              >
+                <Icon name="chevron-down" size={15} />
+              </span>
+            </summary>
+
+            {/* Animação de altura via grid 0fr -> 1fr: é a única forma de
+                animar até a altura do conteúdo sem medir nada em JS. */}
+            <div class="faq-body" data-accordion-body>
+              <div class="overflow-hidden">
+                <p class="pb-6 pr-12 text-[0.9375rem] leading-relaxed text-ink-2">
+                  {item.resposta}
+                </p>
+              </div>
+            </div>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</Section>
+
+<style>
+  /* Remove o triângulo padrão em todos os navegadores. */
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 320ms var(--ease-out-expo);
+  }
+
+  details[open] .faq-body {
+    grid-template-rows: 1fr;
+  }
+
+  /* Enquanto fecha, o JS mantém `open` para a transição rodar até o fim
+     (ver initAccordion em app.ts). */
+  details[data-closing='true'] .faq-body {
+    grid-template-rows: 0fr;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .faq-body {
+      transition: none;
+    }
+  }
+</style>

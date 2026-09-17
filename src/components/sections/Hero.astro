@@ -1,0 +1,122 @@
+---
+/**
+ * Hero da home.
+ *
+ * Regras que guiaram a construção:
+ *
+ *  - O H1 É O ELEMENTO LCP. Por isso ele é texto puro, renderizado no
+ *    servidor, com a fonte pré-carregada. Nenhuma imagem, nenhum vídeo,
+ *    nenhum componente que dependa de JS para aparecer. É o caminho mais
+ *    curto possível até a primeira pintura significativa.
+ *
+ *  - NADA DE `data-reveal` AQUI. Animar a entrada do conteúdo acima da dobra
+ *    atrasaria o LCP em centenas de milissegundos — o navegador pinta o
+ *    elemento com opacity: 0. A textura de fundo anima; o conteúdo não.
+ *
+ *  - ALTURA RESERVADA. O layout usa grid com dimensões definidas, então nada
+ *    se move quando a fonte troca ou o instrumento preenche os números.
+ *    CLS zero por construção, não por sorte.
+ */
+import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
+import ContourField from '../ui/ContourField.astro';
+import VitalsMonitor from '../ui/VitalsMonitor.astro';
+import { whatsappUrl, CONTACT } from '../../data/site';
+---
+
+<section
+  aria-labelledby="hero-title"
+  class="relative overflow-hidden"
+>
+  {/* ---- Camadas de fundo ----
+      Todas `aria-hidden` e `pointer-events-none`. Nenhuma baixa imagem:
+      é SVG inline + gradiente CSS. */}
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+    {/* Curvas de nível — o motivo da marca. */}
+    <div class="absolute inset-0 mask-fade opacity-90">
+      <ContourField lines={10} seed={7} />
+    </div>
+
+    {/* Halo de profundidade. `blur` num elemento estático é barato; o que
+        custaria caro seria animar o blur — e não animamos. */}
+    <div
+      class="breathe absolute left-1/2 top-[38%] size-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40 blur-[110px] sm:size-[56rem]"
+      style="background: radial-gradient(circle, var(--c-brand-solid), transparent 65%)"
+    >
+    </div>
+
+    {/* Malha técnica, bem discreta. */}
+    <div class="absolute inset-0 bg-grid opacity-40 mask-fade-b"></div>
+  </div>
+
+  <div class="container-site">
+    <div
+      class="grid items-center gap-12 pb-(--spacing-section) pt-14 lg:grid-cols-[1.25fr_1fr] lg:gap-14 lg:pt-20"
+    >
+      {/* ---- Coluna de conteúdo ---- */}
+      <div class="max-w-[44rem]">
+        <p class="eyebrow">
+          Engenharia de presença digital
+        </p>
+
+        <h1
+          id="hero-title"
+          class="mt-6 text-display-2xl text-balance"
+        >
+          Sites de <span class="mark-signal">alta conversão</span> construídos
+          como engenharia
+        </h1>
+
+        <p class="mt-7 max-w-xl text-lead text-ink-2 text-pretty">
+          Design premium, carregamento instantâneo e estrutura que o Google
+          entende. Seu site deixa de ser um cartão de visitas caro e passa a
+          ser o canal que traz cliente.
+        </p>
+
+        <div class="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Button
+            href={whatsappUrl()}
+            external
+            variant="primary"
+            size="lg"
+            icon="whatsapp"
+            dataCta="hero-whatsapp"
+          >
+            Falar no WhatsApp
+          </Button>
+
+          <Button
+            href="/metodo/"
+            variant="secondary"
+            size="lg"
+            icon="arrow-right"
+            dataCta="hero-metodo"
+          >
+            Ver como trabalhamos
+          </Button>
+        </div>
+
+        {/* Redutor de atrito logo abaixo do CTA: responde a "o que acontece
+            se eu clicar?" no momento exato da hesitação. */}
+        <p class="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-3">
+          <Icon name="check" size={15} class="text-success" />
+          Diagnóstico sem custo e sem compromisso
+          <span aria-hidden="true" class="text-line-strong">·</span>
+          Resposta {CONTACT.responseTime}
+        </p>
+      </div>
+
+      {/* ---- Instrumento ----
+          O argumento de performance provado pela própria página. Ver o
+          comentário em VitalsMonitor.astro. */}
+      <div class="relative lg:pl-4">
+        <VitalsMonitor class="border-gradient shadow-xl" />
+
+        <p class="mt-4 max-w-sm text-[0.8125rem] leading-relaxed text-ink-3">
+          Estes números são desta página, medidos agora pelo seu navegador.
+          É a mesma engenharia que entregamos — não um print de relatório.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,18 @@
+---
+/**
+ * Injeta o grafo JSON-LD.
+ *
+ * `set:html` é seguro aqui: o conteúdo vem de `JSON.stringify` sobre dados
+ * do próprio projeto, nunca de entrada de usuário. Ainda assim escapamos
+ * `<` para blindar contra quebra de contexto caso um dado editorial passe
+ * a conter HTML no futuro.
+ */
+export interface Props {
+  data: string;
+}
+
+const { data } = Astro.props;
+const safe = data.replace(/</g, '\\u003c');
+---
+
+<script type="application/ld+json" is:inline set:html={safe} />

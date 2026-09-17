@@ -1,0 +1,70 @@
+---
+/**
+ * Cabeçalho de seção: rótulo, título e texto de apoio.
+ *
+ * Centraliza o ritmo e — mais importante — a hierarquia de títulos. O nível
+ * do heading é parâmetro, não chute: uma página com H1 no hero precisa que
+ * as seções sejam H2, e as subseções H3. Pular nível quebra a navegação por
+ * títulos do leitor de tela e confunde o rastreador sobre a estrutura.
+ */
+export interface Props {
+  eyebrow?: string;
+  title: string;
+  /** Nível real do título no documento. */
+  as?: 'h2' | 'h3';
+  /** `id` para o `aria-labelledby` da seção. */
+  id?: string;
+  lead?: string;
+  align?: 'left' | 'center';
+  class?: string;
+  /** Escala do título. */
+  size?: 'lg' | 'md';
+}
+
+const {
+  eyebrow,
+  title,
+  as: Tag = 'h2',
+  id,
+  lead,
+  align = 'left',
+  class: className = '',
+  size = 'lg',
+} = Astro.props;
+---
+
+<div
+  class:list={[
+    'max-w-2xl',
+    align === 'center' && 'mx-auto text-center',
+    className,
+  ]}
+  data-reveal
+>
+  {
+    eyebrow && (
+      <p class:list={['eyebrow', align === 'center' && 'justify-center']}>
+        {eyebrow}
+      </p>
+    )
+  }
+
+  <Tag
+    id={id}
+    class:list={[
+      'text-balance',
+      eyebrow ? 'mt-5' : '',
+      size === 'lg' ? 'text-display-lg' : 'text-display-md',
+    ]}
+  >
+    {title}
+  </Tag>
+
+  {
+    lead && (
+      <p class="mt-5 text-lead text-ink-2 text-pretty">
+        {lead}
+      </p>
+    )
+  }
+</div>

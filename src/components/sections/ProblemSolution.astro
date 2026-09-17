@@ -1,0 +1,81 @@
+---
+/**
+ * Seção de diagnóstico: nomear o problema antes de oferecer a solução.
+ *
+ * Racional de conversão: quem chega aqui já tem um site e já está frustrado
+ * com ele. Antes de falar do que vendemos, precisamos demonstrar que
+ * entendemos o que está acontecendo — é o que transforma "mais uma agência"
+ * em "essas pessoas entendem o meu problema".
+ *
+ * A comparação lado a lado também é boa para SEO semântico: cobre as buscas
+ * de sintoma ("meu site não aparece no Google", "site lento perde cliente")
+ * sem precisar repetir palavra-chave.
+ */
+import Section from '../ui/Section.astro';
+import SectionHeader from './SectionHeader.astro';
+import Icon from '../ui/Icon.astro';
+
+const PROBLEMAS = [
+  {
+    sintoma: 'O site não traz contato nenhum',
+    causa:
+      'Ele descreve a empresa em vez de responder à dúvida de quem chega. Sem argumento e sem próximo passo claro, a visita acaba em nada.',
+  },
+  {
+    sintoma: 'Ninguém encontra a empresa no Google',
+    causa:
+      'Estrutura sem hierarquia semântica, páginas sem intenção de busca definida e metadados genéricos. O Google não consegue entender o que você faz.',
+  },
+  {
+    sintoma: 'Demora para carregar, ainda mais no celular',
+    causa:
+      'Tema pronto com plugins demais, imagens sem otimização e JavaScript que ninguém usa. Metade das visitas desiste antes da primeira tela.',
+  },
+  {
+    sintoma: 'Mudar qualquer coisa vira um problema',
+    causa:
+      'Construído de forma que só o fornecedor original entende. Cada ajuste depende de alguém que talvez nem atenda mais.',
+  },
+];
+---
+
+<Section id="diagnostico" labelledby="diagnostico-titulo" surface="surface-2" divider>
+  <SectionHeader
+    id="diagnostico-titulo"
+    eyebrow="O problema real"
+    title="Site ruim raramente é problema de design"
+    lead="Na maioria dos casos que auditamos, o visual até é aceitável. O que falha é a estrutura por trás dele — e é isso que custa cliente todo mês."
+  />
+
+  <div class="mt-14 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2">
+    {
+      PROBLEMAS.map((item) => (
+        <div class="spotlight bg-surface p-6 sm:p-7" data-reveal>
+          <div class="relative flex items-start gap-3.5">
+            <span
+              aria-hidden="true"
+              class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-md bg-danger/10 text-danger"
+            >
+              <Icon name="alert" size={17} />
+            </span>
+            <div>
+              <h3 class="font-display text-[1.0625rem] font-600 leading-snug text-ink">
+                “{item.sintoma}”
+              </h3>
+              <p class="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-2">
+                {item.causa}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+
+  <p class="mt-8 max-w-2xl text-lead text-ink-2 text-pretty" data-reveal>
+    Nenhum desses problemas se resolve trocando de tema.
+    <strong class="font-600 text-ink">
+      Todos se resolvem no projeto
+    </strong> — que é onde a gente começa.
+  </p>
+</Section>

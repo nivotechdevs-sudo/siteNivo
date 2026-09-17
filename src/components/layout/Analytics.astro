@@ -1,0 +1,205 @@
+---
+/**
+ * Google Analytics 4 com consentimento — LGPD.
+ *
+ * Três decisões, e cada uma tem consequência técnica direta:
+ *
+ * 1. NÃO CARREGA SEM ID. Enquanto `ANALYTICS.ga4Id` estiver vazio, este
+ *    componente não emite nenhuma tag. O site fica com zero requisições de
+ *    terceiro — o que é ótimo para performance e para o PageSpeed.
+ *
+ * 2. CONSENT MODE V2 ANTES DO SCRIPT. O estado padrão é `denied` e é
+ *    declarado ANTES do gtag carregar. É o que a LGPD e o Consent Mode do
+ *    Google exigem: nada de cookie de análise antes do aceite. Feito na
+ *    ordem errada, o primeiro evento já vaza.
+ *
+ * 3. CARREGA NA OCIOSIDADE. O script só entra depois que a página terminou
+ *    de carregar e a thread principal está livre. Analytics é o terceiro que
+ *    mais estraga INP e TBT quando carregado cedo — e ele não precisa disso.
+ */
+import { ANALYTICS } from '../../data/site';
+
+const { ga4Id, requireConsent } = ANALYTICS;
+---
+
+{
+  ga4Id && (
+    <>
+      <script is:inline define:vars={{ ga4Id, requireConsent }}>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+          window.dataLayer.push(arguments);
+        }
+        window.gtag = gtag;
+
+        // Consent Mode v2 — o estado padrão precisa vir ANTES do config.
+        if (requireConsent) {
+          gtag('consent', 'default', {
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            analytics_storage: 'denied',
+            functionality_storage: 'granted',
+            security_storage: 'granted',
+            wait_for_update: 500,
+          });
+
+          // Restaura a escolha já feita em visita anterior.
+          try {
+            if (localStorage.getItem('nivo-consent') === 'granted') {
+              gtag('consent', 'update', {
+                ad_storage: 'granted',
+                ad_user_data: 'granted',
+                ad_personalization: 'granted',
+                analytics_storage: 'granted',
+              });
+            }
+          } catch (e) {
+            /* armazenamento bloqueado: permanece negado, que é o padrão seguro */
+          }
+        }
+
+        gtag('js', new Date());
+        gtag('config', ga4Id, {
+          anonymize_ip: true,
+          send_page_view: true,
+        });
+
+        // Injeta o gtag só quando a thread principal estiver ociosa.
+        function loadGtag() {
+          if (document.getElementById('ga4-script')) return;
+          var s = document.createElement('script');
+          s.id = 'ga4-script';
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ga4Id;
+          document.head.appendChild(s);
+        }
+
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(loadGtag, { timeout: 4000 });
+        } else {
+          window.addEventListener('load', function () {
+            setTimeout(loadGtag, 1500);
+          });
+        }
+      </script>
+
+      {/* Rastreio de conversão.
+          Delegação de evento em um único listener no document, em vez de um
+          listener por botão. Menos memória, e funciona para CTA inserido
+          depois. */}
+      <script is:inline>
+        document.addEventListener(
+          'click',
+          function (e) {
+            var el = e.target instanceof Element ? e.target.closest('[data-cta]') : null;
+            if (!el || typeof window.gtag !== 'function') return;
+
+            var id = el.getAttribute('data-cta') || '';
+            window.gtag('event', 'cta_click', {
+              cta_id: id,
+              // WhatsApp e formulário são conversões; o resto é navegação.
+              cta_type: id.indexOf('whatsapp') !== -1 ? 'whatsapp' : 'form',
+              page_path: location.pathname,
+            });
+          },
+          { passive: true, capture: true },
+        );
+      </script>
+    </>
+  )
+}
+
+{
+  ga4Id && requireConsent && (
+    <>
+      {/* Banner de consentimento.
+          Fica no fim do DOM e só aparece para quem ainda não decidiu.
+          "Recusar" tem o mesmo peso visual de "Aceitar" — exigência da LGPD:
+          a recusa não pode ser mais difícil que o aceite. */}
+      <div
+        id="consent-banner"
+        hidden
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby="consent-title"
+        aria-describedby="consent-desc"
+        data-print-hide
+        class="fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-2xl rounded-xl border border-line bg-surface p-5 shadow-xl sm:inset-x-4 sm:bottom-4"
+      >
+        <h2 id="consent-title" class="font-display text-base font-600 text-ink">
+          Cookies de análise
+        </h2>
+        <p id="consent-desc" class="mt-1.5 text-sm leading-relaxed text-ink-2">
+          Usamos cookies do Google Analytics para entender como o site é usado
+          e melhorá-lo. Nada é usado para publicidade sem a sua autorização.
+          Veja a{' '}
+          <a href="/politica-de-privacidade/" class="link-underline">
+            política de privacidade
+          </a>
+          .
+        </p>
+        <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+          <button type="button" id="consent-accept" class="btn btn--primary flex-1">
+            Aceitar
+          </button>
+          <button type="button" id="consent-reject" class="btn btn--secondary flex-1">
+            Recusar
+          </button>
+        </div>
+      </div>
+
+      <script is:inline>
+        (function () {
+          var banner = document.getElementById('consent-banner');
+          if (!banner) return;
+
+          var saved = null;
+          try {
+            saved = localStorage.getItem('nivo-consent');
+          } catch (e) {
+            /* sem armazenamento: não insistimos no banner a cada visita */
+            return;
+          }
+
+          if (saved === 'granted' || saved === 'denied') return;
+
+          // Mostra depois do carregamento para não competir com o LCP.
+          window.addEventListener('load', function () {
+            setTimeout(function () {
+              banner.hidden = false;
+            }, 900);
+          });
+
+          function decide(value) {
+            try {
+              localStorage.setItem('nivo-consent', value);
+            } catch (e) {
+              /* segue só nesta sessão */
+            }
+            if (typeof window.gtag === 'function') {
+              window.gtag('consent', 'update', {
+                ad_storage: value,
+                ad_user_data: value,
+                ad_personalization: value,
+                analytics_storage: value,
+              });
+            }
+            banner.hidden = true;
+          }
+
+          document
+            .getElementById('consent-accept')
+            .addEventListener('click', function () {
+              decide('granted');
+            });
+          document
+            .getElementById('consent-reject')
+            .addEventListener('click', function () {
+              decide('denied');
+            });
+        })();
+      </script>
+    </>
+  )
+}
