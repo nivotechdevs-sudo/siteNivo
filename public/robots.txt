@@ -19,7 +19,7 @@ Disallow: /*?fbclid
 Disallow: /*?gclid
 
 # Assets de build: nada a indexar, e rastreá-los só gasta orçamento.
-Disallow: /_astro/
+Disallow: /assets/
 
 # Rastreadores de IA para treinamento. Descomente para bloquear — decisão
 # de negócio, não técnica: bloquear também remove o site das respostas

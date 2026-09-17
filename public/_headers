@@ -46,7 +46,7 @@
 # ---------------------------------------------------------------------------
 # Os assets do Astro têm hash no nome do arquivo: mudou o conteúdo, mudou a
 # URL. Por isso podem ser cacheados para sempre com segurança.
-/_astro/*
+/assets/*
   Cache-Control: public, max-age=31536000, immutable
 
 # Fontes são imutáveis pelo nome que demos e mudam raríssimas vezes.

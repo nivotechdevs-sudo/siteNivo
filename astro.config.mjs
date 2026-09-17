@@ -23,6 +23,10 @@ export default defineConfig({
   build: {
     format: 'directory',
     inlineStylesheets: 'auto',
+    // Padrão do Astro é `_astro`. O underscore inicial é ignorado pelo
+    // GitHub Pages (Jekyll) e é prefixo reservado em alguns serviços de
+    // hospedagem. `assets` evita essa classe inteira de problema.
+    assets: 'assets',
   },
 
   integrations: [

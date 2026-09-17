@@ -205,7 +205,7 @@ for (const file of files) {
   for (const m of html.matchAll(/href=["'](\/[^"'#?]*)["']/gi)) {
     const href = m[1];
     if (/\.(png|jpe?g|svg|webp|avif|ico|xml|txt|woff2?|json|webmanifest|css|js)$/i.test(href)) continue;
-    if (href.startsWith('/_astro/')) continue;
+    if (href.startsWith('/assets/')) continue;
     const normalized = href.endsWith('/') ? href : href + '/';
     if (!allRoutes.has(normalized)) err(page, `link interno quebrado: ${href}`);
   }
