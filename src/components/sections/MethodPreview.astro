@@ -34,23 +34,31 @@ import { METODO } from '../../data/content';
       </div>
     </div>
 
-    <ol role="list" class="relative flex flex-col">
+    <ol role="list" class="timeline">
+      {/* Trilho e progresso.
+          O trilho é a linha cinza contínua; o progresso é a linha na cor da
+          marca que a preenche conforme a lista atravessa a viewport.
+
+          Usa `animation-timeline: view()`, que o navegador resolve no
+          compositor: nenhum listener de rolagem, nenhum trabalho por quadro
+          na thread principal. É a diferença entre uma interação de rolagem
+          que custa zero e uma que derruba o INP. Onde a API não existe, o
+          progresso simplesmente não aparece e o trilho fica — degradação
+          sem nada quebrado. */}
+      <span aria-hidden="true" class="timeline__track"></span>
+      <span aria-hidden="true" class="timeline__fill"></span>
+
       {
         METODO.map((etapa, i) => (
           <li
-            class:list={[
-              'relative pb-9 pl-11 last:pb-0',
-              // A linha vertical liga as etapas. A última não tem linha,
-              // senão sobraria um traço apontando para o nada.
-              i < METODO.length - 1 && 'border-l border-line',
-            ]}
+            class="timeline__item"data-index={i}
             data-reveal
             style={`--reveal-delay:${i * 50}ms`}
           >
             {/* Número da etapa, ancorado sobre a linha. */}
             <span
               aria-hidden="true"
-              class="absolute -left-px top-0 grid size-[1.875rem] -translate-x-1/2 place-items-center rounded-full border border-line bg-canvas font-display text-[0.6875rem] font-700 tabular text-ink-3"
+              class="timeline__dot"
             >
               {etapa.numero}
             </span>
@@ -73,3 +81,125 @@ import { METODO } from '../../data/content';
     </ol>
   </div>
 </Section>
+
+<style>
+  .timeline {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Trilho: a linha cinza que liga todas as etapas. Para antes do centro do
+     último marcador, senão sobraria um traço apontando para o nada. */
+  .timeline__track,
+  .timeline__fill {
+    position: absolute;
+    left: 0;
+    top: 0.9375rem;
+    bottom: calc(100% - 0.9375rem);
+    width: 1px;
+    pointer-events: none;
+  }
+
+  .timeline__track {
+    bottom: auto;
+    height: calc(100% - 1.875rem - 2.25rem);
+    background-color: var(--c-line);
+  }
+
+  /* Progresso: gradiente na cor da marca, revelado por `scaleY` ligado à
+     posição da lista na viewport. Anima transform, nunca height — height
+     por quadro dispararia layout na rolagem. */
+  .timeline__fill {
+    height: calc(100% - 1.875rem - 2.25rem);
+    bottom: auto;
+    background: linear-gradient(
+      to bottom,
+      var(--c-brand-vivid),
+      color-mix(in oklab, var(--c-signal-solid) 70%, var(--c-brand-vivid))
+    );
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+
+  @supports (animation-timeline: view()) {
+    .timeline__fill {
+      animation: timeline-grow linear both;
+      animation-timeline: view();
+      /* Começa quando a lista entra e termina quando o topo dela chega ao
+         topo da tela: acompanha a leitura, não a posição bruta da página. */
+      animation-range: entry 55% cover 85%;
+    }
+  }
+
+  @keyframes timeline-grow {
+    to {
+      transform: scaleY(1);
+    }
+  }
+
+  .timeline__item {
+    position: relative;
+    padding-bottom: 2.25rem;
+    padding-left: 2.75rem;
+  }
+
+  .timeline__item:last-child {
+    padding-bottom: 0;
+  }
+
+  /* Marcador da etapa. Fundo opaco para cobrir o trilho que passa atrás. */
+  .timeline__dot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    place-items: center;
+    width: 1.875rem;
+    height: 1.875rem;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    border: 1px solid var(--c-line);
+    background-color: var(--c-canvas);
+    font-family: var(--font-display);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--c-ink-3);
+    transition:
+      border-color 400ms var(--ease-out-quint),
+      color 400ms var(--ease-out-quint),
+      background-color 400ms var(--ease-out-quint);
+  }
+
+  /* O marcador acende quando a etapa entra no campo de leitura. Também por
+     `view()`, então continua sem custo de JavaScript. */
+  @supports (animation-timeline: view()) {
+    .timeline__dot {
+      animation: timeline-dot linear both;
+      animation-timeline: view();
+      animation-range: entry 70% entry 100%;
+    }
+  }
+
+  @keyframes timeline-dot {
+    to {
+      border-color: var(--c-brand-vivid);
+      color: var(--c-brand);
+      background-color: var(--c-brand-subtle);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .timeline__fill {
+      animation: none;
+      transform: scaleY(1);
+      opacity: 0.35;
+    }
+
+    .timeline__dot {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>

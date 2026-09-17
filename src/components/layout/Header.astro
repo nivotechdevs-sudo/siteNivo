@@ -1,14 +1,24 @@
 ---
 /**
- * Cabeçalho fixo.
+ * Cabeçalho — ilha flutuante fosca.
  *
- * Decisões que importam para conversão e acessibilidade:
- *  - CTA de WhatsApp sempre visível, inclusive no mobile. A ação principal
- *    nunca fica escondida atrás do menu sanduíche.
- *  - O item ativo é marcado com `aria-current="page"`, não só com cor. Cor
- *    sozinha não é informação acessível.
- *  - O fundo só aparece depois de rolar, controlado por IntersectionObserver
- *    (ver app.ts) — nenhum listener de scroll na thread principal.
+ * Não é uma barra colada no topo: é uma cápsula destacada das bordas, com
+ * vidro fosco (`backdrop-filter`) e contorno de luz. Ao rolar, ela se
+ * contrai e o vidro fica mais denso — o cabeçalho "recolhe" para devolver
+ * atenção ao conteúdo.
+ *
+ * Decisões que importam:
+ *
+ *  - O CTA de WhatsApp está SEMPRE visível, inclusive no mobile (só o
+ *    ícone). A ação principal nunca fica escondida atrás do sanduíche.
+ *  - O item ativo é marcado com `aria-current="page"`, não apenas com cor.
+ *    Cor sozinha não é informação acessível.
+ *  - O estado "rolou" vem de uma sentinela observada por
+ *    IntersectionObserver (ver src/scripts/app.ts) — nenhum listener de
+ *    scroll na thread principal, então o INP não paga nada por isso.
+ *  - `backdrop-filter` tem fallback: onde não há suporte, a cápsula usa
+ *    fundo sólido com opacidade alta. Sem isso, o texto ficaria sobre o
+ *    conteúdo rolando por baixo.
  */
 import Logo from '../ui/Logo.astro';
 import Button from '../ui/Button.astro';
@@ -23,38 +33,32 @@ const isActive = (href: string): boolean =>
   href === '/' ? path === '/' : path.startsWith(href);
 ---
 
-<header
-  id="site-header"
-  data-scrolled="false"
-  data-print-hide
-  class="group/header fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-300 ease-[var(--ease-out-quint)] border-b border-transparent data-[scrolled=true]:border-line data-[scrolled=true]:bg-canvas/80 data-[scrolled=true]:backdrop-blur-xl"
->
-  <div class="container-site">
-    <div class="flex h-16 items-center justify-between gap-4 lg:h-[4.5rem]">
-      <a
-        href="/"
-        class="rounded-md transition-opacity hover:opacity-80"
-        aria-label="NivoTech — página inicial"
-      >
+<header id="site-header" data-scrolled="false" data-print-hide class="island">
+  {/* Barra de progresso da leitura. Fina, na cor da marca, ancorada no topo
+      absoluto da tela — some junto com o resto em impressão. */}
+  <div aria-hidden="true" class="island__progress">
+    <span class="island__progress-bar" data-scroll-progress></span>
+  </div>
+
+  <div class="island__wrap">
+    <div class="island__capsule">
+      <a href="/" class="island__brand" aria-label="NivoTech — página inicial">
         <Logo />
       </a>
 
       {/* --- Navegação desktop --- */}
-      <nav aria-label="Navegação principal" class="hidden lg:block">
-        <ul role="list" class="flex items-center gap-1">
+      <nav aria-label="Navegação principal" class="island__nav">
+        <ul role="list" class="island__nav-list">
           {
             NAV.map((item) => (
               <li>
                 <a
                   href={item.href}
                   aria-current={isActive(item.href) ? 'page' : undefined}
-                  class="relative inline-flex h-9 items-center rounded-md px-3 text-[0.9375rem] font-medium text-ink-2 transition-colors hover:text-ink aria-[current=page]:text-ink"
+                  class="island__link"
                 >
                   {item.label}
-                  {/* Marca visual do item ativo e do hover. `aria-current` já
-                      informa o leitor de tela; isto é o equivalente para quem
-                      enxerga. Anima `scaleX`, não `width`: sem reflow. */}
-                  <span aria-hidden="true" class="nav-mark" />
+                  <span aria-hidden="true" class="island__link-mark" />
                 </a>
               </li>
             ))
@@ -63,8 +67,8 @@ const isActive = (href: string): boolean =>
       </nav>
 
       {/* --- Ações --- */}
-      <div class="flex items-center gap-2">
-        <div class="hidden sm:block">
+      <div class="island__actions">
+        <div class="island__theme">
           <ThemeToggle />
         </div>
 
@@ -73,20 +77,20 @@ const isActive = (href: string): boolean =>
           external
           variant="primary"
           icon="whatsapp"
-          class="hidden sm:inline-flex"
+          class="island__cta"
           dataCta="header-whatsapp"
         >
           Falar no WhatsApp
         </Button>
 
         {/* No mobile o CTA vira só o ícone: mantém a ação principal
-            acessível sem espremer o cabeçalho. */}
+            acessível sem espremer a cápsula. */}
         <Button
           href={whatsappUrl()}
           external
           variant="primary"
           icon="whatsapp"
-          class="sm:hidden !px-3"
+          class="island__cta-icon"
           ariaLabel={`Falar com a NivoTech no WhatsApp — ${CONTACT.whatsappDisplay}`}
           dataCta="header-whatsapp-mobile"
         />
@@ -96,12 +100,9 @@ const isActive = (href: string): boolean =>
           id="menu-toggle"
           aria-expanded="false"
           aria-controls="mobile-menu"
-          class="grid size-10 place-items-center rounded-md border border-line text-ink transition-colors hover:border-line-strong lg:hidden"
+          class="island__burger"
         >
           <span class="sr-only">Abrir menu de navegação</span>
-          {/* Sanduíche que vira X. As três barras são as mesmas em ambos os
-              estados — só mudam de posição e rotação, e ambas são transform,
-              ou seja, animação de compositor. */}
           <span aria-hidden="true" class="burger">
             <span class="burger__bar"></span>
             <span class="burger__bar"></span>
@@ -116,26 +117,20 @@ const isActive = (href: string): boolean =>
       `inert` quando fechado (aplicado pelo app.ts) tira o painel da ordem de
       foco e da árvore de acessibilidade. Esconder só com opacity deixaria os
       links tabuláveis e o leitor de tela lendo um menu invisível. */}
-  <div
-    id="mobile-menu"
-    data-open="false"
-    class="fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto overscroll-contain border-t border-line bg-canvas px-5 pb-10 pt-6 transition-[opacity,transform] duration-300 ease-[var(--ease-out-expo)] data-[open=false]:pointer-events-none data-[open=false]:-translate-y-2 data-[open=false]:opacity-0 data-[open=true]:translate-y-0 data-[open=true]:opacity-100 lg:hidden"
-  >
+  <div id="mobile-menu" data-open="false" class="sheet">
     <nav aria-label="Navegação principal (mobile)">
-      <ul role="list" class="flex flex-col gap-1">
+      <ul role="list" class="sheet__list">
         {
           NAV.map((item) => (
             <li>
               <a
                 href={item.href}
                 aria-current={isActive(item.href) ? 'page' : undefined}
-                class="flex flex-col gap-0.5 rounded-lg px-4 py-3.5 transition-colors hover:bg-surface-2 aria-[current=page]:bg-surface-2"
+                class="sheet__link"
               >
-                <span class="font-display text-lg font-600 tracking-[-0.02em] text-ink">
-                  {item.label}
-                </span>
+                <span class="sheet__link-label">{item.label}</span>
                 {item.description && (
-                  <span class="text-sm text-ink-3">{item.description}</span>
+                  <span class="sheet__link-desc">{item.description}</span>
                 )}
               </a>
             </li>
@@ -144,7 +139,7 @@ const isActive = (href: string): boolean =>
       </ul>
     </nav>
 
-    <div class="mt-6 flex flex-col gap-3 border-t border-line pt-6">
+    <div class="sheet__actions">
       <Button
         href="/contato/"
         variant="secondary"
@@ -168,31 +163,344 @@ const isActive = (href: string): boolean =>
       </Button>
     </div>
 
-    <div class="mt-6 flex items-center justify-between border-t border-line pt-6">
-      <span class="text-sm text-ink-3">Tema</span>
+    <div class="sheet__row">
+      <span class="sheet__row-label">Tema</span>
       <ThemeToggle />
     </div>
 
-    <p class="mt-6 flex items-center gap-2 text-sm text-ink-3">
+    <p class="sheet__contact">
       <Icon name="mail" size={16} />
       <a href={`mailto:${CONTACT.email}`} class="link-underline">{CONTACT.email}</a>
     </p>
   </div>
 </header>
 
-{/* Espaçador: o cabeçalho é `fixed`, então ele sai do fluxo. Sem este bloco,
-    o conteúdo nasceria por baixo dele. Reservar a altura aqui é o que evita
+{/* Espaçador: o cabeçalho é `fixed`, então sai do fluxo. Sem este bloco o
+    conteúdo nasceria por baixo dele. Reservar a altura aqui é o que evita
     deslocamento de layout no carregamento. */}
-<div aria-hidden="true" class="h-16 lg:h-[4.5rem]"></div>
+<div aria-hidden="true" class="island-spacer"></div>
 
 <style>
+  /* ========================================================================
+     ILHA
+     ======================================================================== */
+
+  .island {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 50;
+  }
+
+  .island__wrap {
+    padding-inline: 0.75rem;
+    padding-top: 0.75rem;
+    transition: padding-top 400ms var(--ease-out-expo);
+  }
+
+  @media (min-width: 48rem) {
+    .island__wrap {
+      padding-inline: 1.25rem;
+      padding-top: 1rem;
+    }
+  }
+
+  /* A cápsula.
+     `backdrop-filter` com saturação alta é o que dá o aspecto "fosco" em vez
+     de "translúcido sujo": o blur mistura o fundo e a saturação devolve a
+     cor que o blur apaga. É a mesma receita do vidro do sistema. */
+  .island__capsule {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    max-width: 74rem;
+    margin-inline: auto;
+    height: 3.5rem;
+    padding-inline: 0.75rem 0.5rem;
+    border-radius: 999px;
+    background-color: color-mix(in oklab, var(--c-surface) 62%, transparent);
+    border: 1px solid color-mix(in oklab, var(--c-line) 70%, transparent);
+    box-shadow:
+      0 1px 2px color-mix(in oklab, var(--c-inverse) 4%, transparent),
+      0 12px 32px -12px color-mix(in oklab, var(--c-inverse) 12%, transparent);
+    transition:
+      max-width 500ms var(--ease-out-expo),
+      height 400ms var(--ease-out-expo),
+      background-color 350ms var(--ease-out-quint),
+      border-color 350ms var(--ease-out-quint),
+      box-shadow 400ms var(--ease-out-expo);
+  }
+
+  @media (min-width: 48rem) {
+    .island__capsule {
+      height: 3.75rem;
+      padding-inline: 1rem 0.625rem;
+    }
+  }
+
+  /* Fallback: sem `backdrop-filter` o fundo precisa ser quase opaco, senão o
+     conteúdo rolando por baixo torna o menu ilegível. */
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .island__capsule {
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      backdrop-filter: blur(20px) saturate(180%);
+    }
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .island__capsule {
+      background-color: color-mix(in oklab, var(--c-surface) 96%, transparent);
+    }
+  }
+
+  /* Contorno de luz no topo da cápsula — o detalhe que faz parecer vidro
+     físico em vez de um retângulo com opacidade. */
+  .island__capsule::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      160deg,
+      color-mix(in oklab, #fff 55%, transparent),
+      transparent 38%,
+      transparent 62%,
+      color-mix(in oklab, var(--c-brand-vivid) 22%, transparent)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  :global([data-theme='dark']) .island__capsule::before {
+    background: linear-gradient(
+      160deg,
+      color-mix(in oklab, #fff 18%, transparent),
+      transparent 38%,
+      transparent 62%,
+      color-mix(in oklab, var(--c-brand-vivid) 34%, transparent)
+    );
+  }
+
+  /* ---- Estado rolado: a ilha se recolhe ---- */
+  .island[data-scrolled='true'] .island__wrap {
+    padding-top: 0.5rem;
+  }
+
+  .island[data-scrolled='true'] .island__capsule {
+    max-width: 62rem;
+    height: 3.25rem;
+    background-color: color-mix(in oklab, var(--c-surface) 78%, transparent);
+    border-color: color-mix(in oklab, var(--c-line-strong) 60%, transparent);
+    box-shadow:
+      0 1px 2px color-mix(in oklab, var(--c-inverse) 6%, transparent),
+      0 16px 40px -14px color-mix(in oklab, var(--c-inverse) 20%, transparent);
+  }
+
+  /* ---- Progresso de leitura ---- */
+  .island__progress {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 2px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .island__progress-bar {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(
+      90deg,
+      var(--c-brand-vivid),
+      var(--c-signal-solid)
+    );
+    /* A largura é animada por `scaleX`, não por `width`: transform roda no
+       compositor e não dispara layout a cada quadro de rolagem. */
+    transform: scaleX(0);
+    transform-origin: left;
+    opacity: 0;
+    transition: opacity 300ms var(--ease-out-quint);
+  }
+
+  .island[data-scrolled='true'] .island__progress-bar {
+    opacity: 1;
+  }
+
+  /* Caminho principal: animação ligada à rolagem, resolvida pelo navegador
+     no compositor. Nenhum listener, nenhum trabalho por quadro na thread
+     principal. O JS em app.ts só entra onde isto não existe. */
+  @supports (animation-timeline: scroll()) {
+    .island__progress-bar {
+      animation: island-progress linear;
+      animation-timeline: scroll(root block);
+    }
+  }
+
+  @keyframes island-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  /* ---- Marca ---- */
+  .island__brand {
+    display: inline-flex;
+    border-radius: var(--radius-md);
+    transition: opacity 200ms var(--ease-out-quint);
+    flex-shrink: 0;
+  }
+
+  .island__brand:hover {
+    opacity: 0.75;
+  }
+
+  /* ---- Navegação ---- */
+  .island__nav {
+    display: none;
+  }
+
+  @media (min-width: 64rem) {
+    .island__nav {
+      display: block;
+    }
+  }
+
+  .island__nav-list {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+  }
+
+  .island__link {
+    position: relative;
+    display: inline-flex;
+    height: 2.25rem;
+    align-items: center;
+    padding-inline: 0.75rem;
+    border-radius: 999px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--c-ink-2);
+    text-decoration: none;
+    transition:
+      color 200ms var(--ease-out-quint),
+      background-color 200ms var(--ease-out-quint);
+  }
+
+  .island__link:hover {
+    color: var(--c-ink);
+    background-color: color-mix(in oklab, var(--c-ink) 6%, transparent);
+  }
+
+  .island__link[aria-current='page'] {
+    color: var(--c-ink);
+  }
+
+  /* Ponto do item ativo — o equivalente visual do `aria-current`. */
+  .island__link-mark {
+    position: absolute;
+    bottom: 0.3125rem;
+    left: 50%;
+    width: 0.25rem;
+    height: 0.25rem;
+    border-radius: 999px;
+    background-color: var(--c-brand-vivid);
+    transform: translateX(-50%) scale(0);
+    transition: transform 320ms var(--ease-spring);
+  }
+
+  .island__link[aria-current='page'] .island__link-mark {
+    transform: translateX(-50%) scale(1);
+  }
+
+  /* ---- Ações ---- */
+  .island__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .island__theme {
+    display: none;
+  }
+
+  @media (min-width: 40rem) {
+    .island__theme {
+      display: block;
+    }
+  }
+
+  /* `:global()` é necessário aqui e o motivo merece registro: o Astro
+     escopa o CSS deste componente com um atributo próprio, mas estes dois
+     elementos são a RAIZ de Button.astro e não recebem esse atributo. Sem
+     o :global, nenhuma destas regras aplicaria — e as duas variantes do CTA
+     apareceriam juntas. Os nomes são únicos, então não há vazamento real. */
+  .island__actions :global(.island__cta) {
+    display: none;
+  }
+
+  @media (min-width: 40rem) {
+    .island__actions :global(.island__cta) {
+      display: inline-flex;
+    }
+  }
+
+  .island__actions :global(.island__cta-icon) {
+    padding-inline: 0.75rem;
+  }
+
+  @media (min-width: 40rem) {
+    .island__actions :global(.island__cta-icon) {
+      display: none;
+    }
+  }
+
+  .island__burger {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background: none;
+    color: var(--c-ink);
+    cursor: pointer;
+    transition:
+      background-color 200ms var(--ease-out-quint),
+      border-color 200ms var(--ease-out-quint);
+  }
+
+  .island__burger:hover {
+    background-color: color-mix(in oklab, var(--c-ink) 6%, transparent);
+  }
+
+  @media (min-width: 64rem) {
+    .island__burger {
+      display: none;
+    }
+  }
+
   /* O estado vem do próprio `aria-expanded` do botão: uma fonte de verdade
      só, já acessível, sem classe paralela para manter em sincronia. */
   .burger {
     position: relative;
     display: block;
-    width: 1.25rem;
-    height: 0.875rem;
+    width: 1.125rem;
+    height: 0.75rem;
   }
 
   .burger__bar {
@@ -208,11 +516,11 @@ const isActive = (href: string): boolean =>
   }
 
   .burger__bar:nth-child(1) { top: 0; }
-  .burger__bar:nth-child(2) { top: 6.25px; }
+  .burger__bar:nth-child(2) { top: 5.25px; }
   .burger__bar:nth-child(3) { bottom: 0; }
 
   [aria-expanded='true'] .burger__bar:nth-child(1) {
-    transform: translateY(6.25px) rotate(45deg);
+    transform: translateY(5.25px) rotate(45deg);
   }
 
   [aria-expanded='true'] .burger__bar:nth-child(2) {
@@ -220,24 +528,145 @@ const isActive = (href: string): boolean =>
   }
 
   [aria-expanded='true'] .burger__bar:nth-child(3) {
-    transform: translateY(-6.25px) rotate(-45deg);
+    transform: translateY(-5.25px) rotate(-45deg);
   }
 
-  /* Indicador do item de navegação. */
-  .nav-mark {
-    position: absolute;
+  /* ---- Espaçador ---- */
+  .island-spacer {
+    height: 5rem;
+  }
+
+  @media (min-width: 48rem) {
+    .island-spacer {
+      height: 5.75rem;
+    }
+  }
+
+  /* ========================================================================
+     PAINEL MOBILE
+     ======================================================================== */
+
+  .sheet {
+    position: fixed;
     inset-inline: 0.75rem;
-    bottom: -1px;
-    height: 1.5px;
-    background-color: var(--c-brand);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 320ms var(--ease-out-expo);
+    top: 4.75rem;
+    bottom: 0.75rem;
+    z-index: 40;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1.25rem;
+    border-radius: var(--radius-xl);
+    background-color: color-mix(in oklab, var(--c-surface) 88%, transparent);
+    border: 1px solid var(--c-line);
+    box-shadow: var(--shadow-xl);
+    transition:
+      opacity 300ms var(--ease-out-expo),
+      transform 380ms var(--ease-out-expo);
   }
 
-  a:hover > .nav-mark,
-  a:focus-visible > .nav-mark,
-  a[aria-current='page'] > .nav-mark {
-    transform: scaleX(1);
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .sheet {
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      backdrop-filter: blur(24px) saturate(180%);
+    }
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .sheet {
+      background-color: var(--c-surface);
+    }
+  }
+
+  .sheet[data-open='false'] {
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-0.75rem) scale(0.98);
+  }
+
+  .sheet[data-open='true'] {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  @media (min-width: 64rem) {
+    .sheet {
+      display: none;
+    }
+  }
+
+  .sheet__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .sheet__link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    transition: background-color 200ms var(--ease-out-quint);
+  }
+
+  .sheet__link:hover,
+  .sheet__link[aria-current='page'] {
+    background-color: var(--c-surface-2);
+  }
+
+  .sheet__link-label {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--c-ink);
+  }
+
+  .sheet__link-desc {
+    font-size: 0.875rem;
+    color: var(--c-ink-3);
+  }
+
+  .sheet__actions {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--c-line);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .sheet__row {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--c-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sheet__row-label {
+    font-size: 0.875rem;
+    color: var(--c-ink-3);
+  }
+
+  .sheet__contact {
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--c-ink-3);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .island__wrap,
+    .island__capsule,
+    .island__link-mark,
+    .island__progress-bar,
+    .sheet {
+      transition: none;
+    }
   }
 </style>

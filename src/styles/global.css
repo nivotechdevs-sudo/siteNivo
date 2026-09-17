@@ -74,18 +74,27 @@
    ========================================================================== */
 
 :root {
-  /* Azul Nivo — cor de ação. Engenharia, confiança, clique. */
-  --p-brand-50: #eef3ff;
-  --p-brand-100: #dce6ff;
-  --p-brand-200: #bacdff;
-  --p-brand-300: #8fadff;
-  --p-brand-400: #5b85ff;
-  --p-brand-500: #2e5cff;
-  --p-brand-600: #1540e6;
-  --p-brand-700: #0f31b8;
-  --p-brand-800: #0e2a91;
-  --p-brand-900: #112870;
-  --p-brand-950: #0b1847;
+  /* Índigo Nivo — a cor da marca.
+     O tom 500 é hsl(243 95% 69%), a cor especificada: é ela que domina a
+     percepção do site (brilhos, bordas, o objeto 3D do hero).
+
+     Nota de contraste, e é o motivo de existirem dois tons em uso:
+     o 500 dá 4,12:1 sobre o papel claro — abaixo dos 4,5:1 que a WCAG
+     exige para texto normal. Então texto e botões preenchidos usam o 600
+     (6,19:1 sobre claro, 6,46:1 com branco em cima) e o 500 fica para o
+     que é decorativo, onde contraste de texto não se aplica. Assim a cor
+     pedida é a assinatura visual sem que nada fique ilegível. */
+  --p-brand-50: #f1f0ff;
+  --p-brand-100: #e2e0ff;
+  --p-brand-200: #cbc7fe;
+  --p-brand-300: #a9a5fd;
+  --p-brand-400: #8d88fc;
+  --p-brand-500: #6c65fb; /* hsl(243 95% 69%) — a cor da marca */
+  --p-brand-600: #4941ec;
+  --p-brand-700: #3328d2;
+  --p-brand-800: #3129a3;
+  --p-brand-900: #302880;
+  --p-brand-950: #1d174f;
 
   /* Lima Sinal — a cor da performance. Usada com parcimônia: números de
      resultado, marcas de destaque e as curvas de nível da marca.
@@ -154,6 +163,9 @@
   --c-brand-subtle: var(--p-brand-50);
   --c-brand-subtle-ink: var(--p-brand-800);
   --c-brand-ring: color-mix(in oklab, var(--p-brand-500) 45%, transparent);
+  /* A cor especificada, sem ajuste. Só para uso decorativo: brilhos,
+     bordas em gradiente, o objeto 3D. Nunca para texto. */
+  --c-brand-vivid: var(--p-brand-500);
 
   --c-signal: var(--p-signal-600); /* versão legível como texto no claro */
   --c-signal-solid: var(--p-signal-400);
@@ -165,7 +177,7 @@
   --c-focus: var(--p-brand-600);
 
   /* Sombras tingidas de azul: parecem luz ambiente, não fumaça cinza. */
-  --shadow-color: 222 47% 11%;
+  --shadow-color: 243 45% 14%;
   --c-shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.06);
   --c-shadow-md:
     0 2px 4px hsl(var(--shadow-color) / 0.04),
@@ -209,12 +221,14 @@
 
     --c-brand: var(--p-brand-300);
     --c-brand-hover: var(--p-brand-200);
-    --c-brand-solid: var(--p-brand-500);
-    --c-brand-solid-hover: var(--p-brand-400);
+    /* 600 e não 500: branco sobre o 500 dá 4,29:1, abaixo de AA. */
+    --c-brand-solid: var(--p-brand-600);
+    --c-brand-solid-hover: var(--p-brand-500);
     --c-brand-on-solid: var(--p-neutral-0);
     --c-brand-subtle: color-mix(in oklab, var(--p-brand-500) 16%, transparent);
     --c-brand-subtle-ink: var(--p-brand-200);
     --c-brand-ring: color-mix(in oklab, var(--p-brand-400) 55%, transparent);
+    --c-brand-vivid: var(--p-brand-500);
 
     --c-signal: var(--p-signal-400);
     --c-signal-solid: var(--p-signal-400);
@@ -261,12 +275,14 @@
 
   --c-brand: var(--p-brand-300);
   --c-brand-hover: var(--p-brand-200);
-  --c-brand-solid: var(--p-brand-500);
-  --c-brand-solid-hover: var(--p-brand-400);
+  /* 600 e não 500: branco sobre o 500 dá 4,29:1, abaixo de AA. */
+  --c-brand-solid: var(--p-brand-600);
+  --c-brand-solid-hover: var(--p-brand-500);
   --c-brand-on-solid: var(--p-neutral-0);
   --c-brand-subtle: color-mix(in oklab, var(--p-brand-500) 16%, transparent);
   --c-brand-subtle-ink: var(--p-brand-200);
   --c-brand-ring: color-mix(in oklab, var(--p-brand-400) 55%, transparent);
+  --c-brand-vivid: var(--p-brand-500);
 
   --c-signal: var(--p-signal-400);
   --c-signal-solid: var(--p-signal-400);
@@ -324,6 +340,7 @@
   --color-brand-on-solid: var(--c-brand-on-solid);
   --color-brand-subtle: var(--c-brand-subtle);
   --color-brand-subtle-ink: var(--c-brand-subtle-ink);
+  --color-brand-vivid: var(--c-brand-vivid);
 
   --color-signal: var(--c-signal);
   --color-signal-solid: var(--c-signal-solid);
@@ -1022,7 +1039,12 @@
 
   @keyframes parallax-drift {
     to {
-      transform: translate3d(0, var(--parallax-distance), 0);
+      /* `translate` e não `transform`: a propriedade individual compõe com
+         um `transform` já existente no elemento em vez de sobrescrevê-lo.
+         Sem isso, aplicar parallax a algo que já usa transform para
+         centralizar (ou que roda outra animação) quebraria o
+         posicionamento. */
+      translate: 0 var(--parallax-distance);
     }
   }
 

@@ -90,12 +90,53 @@ function initHeader(): void {
 
   const observer = new IntersectionObserver(
     ([entry]) => {
-      header.dataset.scrolled = entry && entry.isIntersecting ? 'false' : 'true';
+      const rolou = entry && entry.isIntersecting ? 'false' : 'true';
+      header.dataset.scrolled = rolou;
+      // Publica o mesmo estado no <html>: qualquer componente reage por CSS,
+      // sem precisar do próprio JS. A dica de rolagem do hero usa isto.
+      document.documentElement.dataset.scrolled = rolou;
     },
     { threshold: 0 },
   );
 
   observer.observe(sentinel);
+}
+
+/**
+ * Barra de progresso da leitura.
+ *
+ * O caminho principal é CSS puro: `animation-timeline: scroll()` roda no
+ * compositor, sem nenhum listener e sem custo por quadro. Este JS só existe
+ * como reserva para navegador sem suporte — e ali usa `scaleX`, nunca
+ * `width`, para não disparar layout durante a rolagem.
+ */
+function initScrollProgress(): void {
+  const bar = document.querySelector<HTMLElement>('[data-scroll-progress]');
+  if (!bar) return;
+
+  // Suporte nativo: o CSS já cuida, não registramos nada.
+  if (CSS.supports('animation-timeline', 'scroll()')) return;
+  if (prefersReducedMotion()) return;
+
+  let frame = 0;
+
+  const update = (): void => {
+    frame = 0;
+    const doc = document.documentElement;
+    const rolavel = doc.scrollHeight - doc.clientHeight;
+    const p = rolavel > 0 ? Math.min(doc.scrollTop / rolavel, 1) : 0;
+    bar.style.transform = `scaleX(${p})`;
+  };
+
+  addEventListener(
+    'scroll',
+    () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    },
+    { passive: true },
+  );
+
+  update();
 }
 
 /**
@@ -349,6 +390,7 @@ function initYear(): void {
 function init(): void {
   initReveal();
   initHeader();
+  initScrollProgress();
   initMobileMenu();
   initCounters();
   initSpotlight();

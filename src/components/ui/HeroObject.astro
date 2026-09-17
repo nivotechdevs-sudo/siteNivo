@@ -1,0 +1,319 @@
+---
+/**
+ * Palco do objeto 3D do hero.
+ *
+ * O que o servidor entrega: um contêiner com proporção fixa, um brilho em CSS
+ * e um `<canvas>` vazio e transparente. Sem imagem, sem requisição extra,
+ * **sem deslocamento de layout** — a proporção reserva o espaço antes de
+ * qualquer pixel chegar.
+ *
+ * O 3D entra depois, e só se puder: ver os guardas no script abaixo. Quando
+ * não entra, o brilho em CSS fica sozinho e o hero continua composto — não
+ * existe estado "quebrado" nem buraco vazio.
+ *
+ * O canvas é `aria-hidden`: é decoração. A informação do hero está no H1 e no
+ * parágrafo ao lado, que é o que o leitor de tela e o rastreador leem.
+ */
+---
+
+<div class="hero-stage" data-hero-stage>
+  {/* Camadas de luz, puramente CSS. Existem por si — não são um
+      "carregando" à espera do 3D. */}
+  <div aria-hidden="true" class="hero-stage__glow hero-stage__glow--depth"></div>
+  <div aria-hidden="true" class="hero-stage__glow hero-stage__glow--core"></div>
+  <div aria-hidden="true" class="hero-stage__glow hero-stage__glow--rim"></div>
+  <div aria-hidden="true" class="hero-stage__grid"></div>
+
+  <canvas
+    data-hero-canvas
+    aria-hidden="true"
+    class="hero-stage__canvas"
+    width="640"
+    height="640"></canvas>
+</div>
+
+<style>
+  .hero-stage {
+    position: relative;
+    /* Proporção reservada no servidor: o espaço já existe antes do canvas
+       ter conteúdo, então o texto ao lado nunca é empurrado. CLS = 0. */
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    max-width: 34rem;
+    margin-inline: auto;
+    isolation: isolate;
+    /* `layout` isola o cálculo de layout e ajuda a performance. `paint`
+       NÃO entra: ele recortaria o halo e os corpos em órbita, que passam
+       de propósito da caixa do objeto. */
+    contain: layout;
+  }
+
+  .hero-stage__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    /* Entra com fade quando o renderizador desenha o primeiro quadro. */
+    opacity: 0;
+    transition: opacity 900ms var(--ease-out-expo);
+    /* Não intercepta ponteiro: a rotação vem do movimento na seção inteira,
+       e um canvas capturando eventos aqui só atrapalharia a seleção do
+       texto ao lado. */
+    pointer-events: none;
+  }
+
+  .hero-stage[data-ready='true'] .hero-stage__canvas {
+    opacity: 1;
+  }
+
+  /* ---- Luz ----
+     Dois halos sobrepostos: um núcleo na cor da marca e um anel externo mais
+     frio. Juntos dão a sensação de um corpo iluminado no centro da cena, com
+     ou sem o 3D em cima. */
+  .hero-stage__glow {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  /* Profundidade: atmosfera escura e fria atrás do objeto. É o que dá ao
+     vidro translúcido algo contra o que contrastar — apresentar render de
+     produto sobre branco puro sempre apaga a peça. Discreta o bastante
+     para ler como sombra de ambiente, não como mancha. */
+  .hero-stage__glow--depth {
+    inset: 8%;
+    background: radial-gradient(
+      ellipse 62% 54% at 50% 56%,
+      color-mix(in oklab, var(--p-brand-950) 62%, transparent),
+      color-mix(in oklab, var(--p-brand-800) 26%, transparent) 46%,
+      transparent 74%
+    );
+    filter: blur(30px);
+    opacity: 0.4;
+  }
+
+  :global([data-theme='dark']) .hero-stage__glow--depth {
+    opacity: 0.9;
+  }
+
+  .hero-stage__glow--core {
+    inset: 18%;
+    background: radial-gradient(
+      circle,
+      color-mix(in oklab, var(--c-brand-vivid) 62%, transparent),
+      transparent 68%
+    );
+    filter: blur(58px);
+    opacity: 0.42;
+    animation: hero-pulse 11s var(--ease-in-out-soft) infinite;
+  }
+
+  .hero-stage__glow--rim {
+    inset: 4%;
+    background: conic-gradient(
+      from 210deg,
+      transparent 0deg,
+      color-mix(in oklab, var(--c-signal-solid) 34%, transparent) 60deg,
+      transparent 130deg,
+      color-mix(in oklab, var(--c-brand-vivid) 45%, transparent) 250deg,
+      transparent 330deg
+    );
+    filter: blur(46px);
+    opacity: 0.4;
+    animation: hero-drift 26s linear infinite;
+  }
+
+  /* Malha técnica sob o objeto — dá escala e "chão" à cena. */
+  .hero-stage__grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, var(--c-grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--c-grid) 1px, transparent 1px);
+    background-size: 2.25rem 2.25rem;
+    -webkit-mask-image: radial-gradient(circle at 50% 52%, #000 12%, transparent 62%);
+    mask-image: radial-gradient(circle at 50% 52%, #000 12%, transparent 62%);
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  @keyframes hero-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.68;
+    }
+  }
+
+  @keyframes hero-drift {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .hero-stage {
+      max-width: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-stage__glow--core,
+    .hero-stage__glow--rim {
+      animation: none;
+    }
+    .hero-stage__canvas {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Carregamento e interação do objeto 3D.
+   *
+   * A ordem aqui é deliberada: TODOS os guardas correm antes do `import()`.
+   * Um aparelho que não deveria rodar a cena não baixa um byte do
+   * renderizador — de nada serviria adiar o custo e pagá-lo de todo jeito.
+   */
+  const stage = document.querySelector<HTMLElement>('[data-hero-stage]');
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-hero-canvas]');
+
+  if (stage && canvas) {
+    type Conexao = { saveData?: boolean; effectiveType?: string };
+    const conexao = (navigator as Navigator & { connection?: Conexao }).connection;
+    const memoria = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+
+    const reduzido = matchMedia('(prefers-reduced-motion: reduce)');
+
+    /**
+     * Motivos para não rodar, e cada um é real:
+     *  - sem WebGL2: nada a fazer
+     *  - economia de dados: o usuário pediu explicitamente para poupar
+     *  - conexão 2G/3G: o renderizador competiria com o conteúdo
+     *  - pouca memória: cena 3D em aparelho de 1 GB trava a rolagem
+     */
+    function permitido(): boolean {
+      if (!window.WebGL2RenderingContext) return false;
+      if (conexao?.saveData) return false;
+      if (conexao?.effectiveType && /^(slow-)?2g$|^3g$/.test(conexao.effectiveType)) return false;
+      if (typeof memoria === 'number' && memoria > 0 && memoria < 2) return false;
+      return true;
+    }
+
+    if (permitido()) {
+      // `requestIdleCallback` espera a thread principal ficar livre. O
+      // fallback de 1,2s cobre navegadores sem a API (Safari) sem prender
+      // o carregamento a `load`, que em conexão ruim demora muito.
+      const agendar = (fn: () => void): void => {
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(fn, { timeout: 2500 });
+        } else {
+          setTimeout(fn, 1200);
+        }
+      };
+
+      agendar(() => {
+        void import('../../scripts/hero3d').then(({ initHero3d }) => {
+          const cena = initHero3d(canvas);
+          if (!cena) return; // contexto perdido ou shader recusado
+
+          stage.dataset.ready = 'true';
+
+          /* ---- Movimento reduzido: um quadro e pronto ---- */
+          if (reduzido.matches) {
+            cena.renderStatic();
+            return;
+          }
+
+          cena.start();
+
+          /* ---- Rolagem ----
+             A rotação acompanha a posição do palco na viewport. Nada de
+             listener de scroll: o IntersectionObserver com muitos limiares
+             entrega a fração visível, e é dela que sai o progresso.
+             Zero trabalho por quadro na thread principal. */
+          const limiares = Array.from({ length: 21 }, (_, i) => i / 20);
+
+          const progresso = new IntersectionObserver(
+            (entradas) => {
+              for (const e of entradas) {
+                // Posição do centro do palco na viewport, de 1 (embaixo)
+                // a -1 (em cima). Zero quando está centralizado.
+                const meio = e.boundingClientRect.top + e.boundingClientRect.height / 2;
+                const p = (meio / window.innerHeight - 0.5) * 2;
+
+                cena.setTarget({
+                  // Uma volta suave e incompleta ao longo da rolagem: o
+                  // objeto se revela, não roda como um carrossel.
+                  yaw: -p * 0.85,
+                  pitch: p * 0.16,
+                  lift: -p * 0.1,
+                  // Recua levemente ao sair de cena, reforçando profundidade.
+                  scale: 1 - Math.abs(p) * 0.06,
+                });
+
+                // Fora da viewport o laço para. Não há motivo para gastar
+                // GPU e bateria animando o que ninguém vê.
+                if (e.isIntersecting) cena.start();
+                else cena.stop();
+              }
+            },
+            { threshold: limiares },
+          );
+          progresso.observe(stage);
+
+          /* ---- Ponteiro ----
+             Só com mouse. Em toque não existe hover, e registrar o listener
+             lá seria código morto rodando justamente onde a performance é
+             mais escassa. O alvo é somado ao da rolagem via variáveis
+             separadas para os dois não se sobrescreverem. */
+          if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+            let frame = 0;
+            const secao = stage.closest('section') ?? stage;
+
+            secao.addEventListener(
+              'pointermove',
+              (evento) => {
+                if (frame) return;
+                frame = requestAnimationFrame(() => {
+                  const r = secao.getBoundingClientRect();
+                  const nx = ((evento as PointerEvent).clientX - r.left) / r.width - 0.5;
+                  const ny = ((evento as PointerEvent).clientY - r.top) / r.height - 0.5;
+                  cena.setTarget({
+                    yaw: nx * 0.5,
+                    pitch: ny * 0.28,
+                  });
+                  frame = 0;
+                });
+              },
+              { passive: true },
+            );
+          }
+
+          /* ---- Aba em segundo plano ---- */
+          document.addEventListener('visibilitychange', () => {
+            if (document.hidden) cena.stop();
+            else cena.start();
+          });
+
+          /* ---- Usuário liga "reduzir movimento" no meio da sessão ---- */
+          reduzido.addEventListener('change', (e) => {
+            if (e.matches) {
+              cena.stop();
+              cena.renderStatic();
+            } else {
+              cena.start();
+            }
+          });
+        });
+      });
+    }
+  }
+</script>

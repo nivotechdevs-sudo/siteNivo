@@ -2,78 +2,60 @@
 /**
  * Hero da home.
  *
- * Regras que guiaram a construção:
+ * Regras que guiaram a construção, e a primeira é a que mais importa:
  *
- *  - O H1 É O ELEMENTO LCP. Por isso ele é texto puro, renderizado no
- *    servidor, com a fonte pré-carregada. Nenhuma imagem, nenhum vídeo,
- *    nenhum componente que dependa de JS para aparecer. É o caminho mais
- *    curto possível até a primeira pintura significativa.
+ *  - O H1 É O ELEMENTO LCP. Texto puro, renderizado no servidor, com a fonte
+ *    pré-carregada. Nenhuma imagem, nenhum vídeo, nada que dependa de JS
+ *    para aparecer. É o caminho mais curto possível até a primeira pintura
+ *    significativa — e é por isso que o LCP fica abaixo de 1s mesmo em 4G
+ *    lento, com o objeto 3D na mesma tela.
  *
- *  - NADA DE `data-reveal` AQUI. Animar a entrada do conteúdo acima da dobra
- *    atrasaria o LCP em centenas de milissegundos — o navegador pinta o
- *    elemento com opacity: 0. A textura de fundo anima; o conteúdo não.
+ *  - NADA DE `data-reveal` NO CONTEÚDO DAQUI. Animar a entrada do que está
+ *    acima da dobra atrasaria o LCP em centenas de milissegundos, porque o
+ *    navegador pinta o elemento com `opacity: 0`. O fundo e o objeto animam;
+ *    o texto não.
  *
- *  - ALTURA RESERVADA. O layout usa grid com dimensões definidas, então nada
- *    se move quando a fonte troca ou o instrumento preenche os números.
- *    CLS zero por construção, não por sorte.
+ *  - ALTURA RESERVADA EM TUDO. O palco do objeto tem proporção fixa e o
+ *    cabeçalho tem espaçador próprio, então nada se move quando a fonte
+ *    troca ou quando o 3D entra. CLS zero por construção, não por sorte.
  */
 import Button from '../ui/Button.astro';
 import Icon from '../ui/Icon.astro';
 import ContourField from '../ui/ContourField.astro';
-import VitalsMonitor from '../ui/VitalsMonitor.astro';
+import HeroObject from '../ui/HeroObject.astro';
 import { whatsappUrl, CONTACT } from '../../data/site';
 ---
 
-<section
-  aria-labelledby="hero-title"
-  class="relative overflow-hidden"
->
+<section aria-labelledby="hero-title" class="hero">
   {/* ---- Camadas de fundo ----
-      Todas `aria-hidden` e `pointer-events-none`. Nenhuma baixa imagem:
-      é SVG inline + gradiente CSS. */}
-  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
-    {/* Curvas de nível — o motivo da marca. */}
-    <div class="absolute inset-0 mask-fade opacity-90">
-      <ContourField lines={10} seed={7} />
+      Todas `aria-hidden` e sem captura de ponteiro. Nenhuma baixa imagem:
+      é SVG inline gerado em tempo de build mais gradiente CSS. */}
+  <div aria-hidden="true" class="hero__bg">
+    <div class="hero__contours parallax-slow">
+      <ContourField lines={11} seed={7} />
     </div>
-
-    {/* Halo de profundidade. `blur` num elemento estático é barato; o que
-        custaria caro seria animar o blur — e não animamos. */}
-    <div
-      class="breathe absolute left-1/2 top-[38%] size-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40 blur-[110px] sm:size-[56rem]"
-      style="background: radial-gradient(circle, var(--c-brand-solid), transparent 65%)"
-    >
-    </div>
-
-    {/* Malha técnica, bem discreta. */}
-    <div class="absolute inset-0 bg-grid opacity-40 mask-fade-b"></div>
+    <div class="hero__wash"></div>
+    <div class="hero__vignette"></div>
   </div>
 
   <div class="container-site">
-    <div
-      class="grid items-center gap-12 pb-(--spacing-section) pt-14 lg:grid-cols-[1.25fr_1fr] lg:gap-14 lg:pt-20"
-    >
-      {/* ---- Coluna de conteúdo ---- */}
-      <div class="max-w-[44rem]">
-        <p class="eyebrow">
-          Engenharia de presença digital
-        </p>
+    <div class="hero__grid">
+      {/* ---- Conteúdo ---- */}
+      <div class="hero__content">
+        <p class="eyebrow">Engenharia de presença digital</p>
 
-        <h1
-          id="hero-title"
-          class="mt-6 text-display-2xl text-balance"
-        >
+        <h1 id="hero-title" class="hero__title">
           Sites de <span class="mark-signal">alta conversão</span> construídos
           como engenharia
         </h1>
 
-        <p class="mt-7 max-w-xl text-lead text-ink-2 text-pretty">
+        <p class="hero__lead">
           Design premium, carregamento instantâneo e estrutura que o Google
           entende. Seu site deixa de ser um cartão de visitas caro e passa a
           ser o canal que traz cliente.
         </p>
 
-        <div class="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div class="hero__actions">
           <Button
             href={whatsappUrl()}
             external
@@ -98,25 +80,235 @@ import { whatsappUrl, CONTACT } from '../../data/site';
 
         {/* Redutor de atrito logo abaixo do CTA: responde a "o que acontece
             se eu clicar?" no momento exato da hesitação. */}
-        <p class="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-3">
+        <p class="hero__trust">
           <Icon name="check" size={15} class="text-success" />
           Diagnóstico sem custo e sem compromisso
-          <span aria-hidden="true" class="text-line-strong">·</span>
+          <span aria-hidden="true" class="hero__sep">·</span>
           Resposta {CONTACT.responseTime}
         </p>
       </div>
 
-      {/* ---- Instrumento ----
-          O argumento de performance provado pela própria página. Ver o
-          comentário em VitalsMonitor.astro. */}
-      <div class="relative lg:pl-4">
-        <VitalsMonitor class="border-gradient shadow-xl" />
-
-        <p class="mt-4 max-w-sm text-[0.8125rem] leading-relaxed text-ink-3">
-          Estes números são desta página, medidos agora pelo seu navegador.
-          É a mesma engenharia que entregamos — não um print de relatório.
-        </p>
+      {/* ---- Objeto 3D ---- */}
+      <div class="hero__object">
+        <HeroObject />
       </div>
+    </div>
+
+    {/* Dica de rolagem: some ao primeiro scroll. Sinaliza que há mais
+        conteúdo abaixo sem ocupar espaço de decisão. */}
+    <div aria-hidden="true" class="hero__cue" data-hero-cue>
+      <span class="hero__cue-line"></span>
+      <span class="hero__cue-text">Role para ver o método</span>
     </div>
   </div>
 </section>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    /* Não usa 100vh: em celular a barra de endereço muda a altura e o
+       conteúdo salta. `min-height` com svh reserva o mínimo útil e deixa o
+       conteúdo definir o resto. */
+    min-height: min(46rem, 92svh);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: 3.5rem 4.5rem;
+  }
+
+  /* ---- Fundo ---- */
+  .hero__bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .hero__contours {
+    position: absolute;
+    inset: -10% -5%;
+    opacity: 0.9;
+    -webkit-mask-image: radial-gradient(ellipse 78% 70% at 62% 44%, #000 28%, transparent 76%);
+    mask-image: radial-gradient(ellipse 78% 70% at 62% 44%, #000 28%, transparent 76%);
+  }
+
+  /* Banho de cor da marca, deslocado para o lado do objeto. */
+  .hero__wash {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        ellipse 55% 60% at 72% 42%,
+        color-mix(in oklab, var(--c-brand-vivid) 18%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 40% 50% at 12% 78%,
+        color-mix(in oklab, var(--c-signal-solid) 7%, transparent),
+        transparent 72%
+      );
+  }
+
+  /* Escurece as bordas para o conteúdo ganhar foco no centro. */
+  .hero__vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse 100% 85% at 50% 40%,
+      transparent 45%,
+      color-mix(in oklab, var(--c-canvas) 55%, transparent) 100%
+    );
+  }
+
+  /* ---- Grade ---- */
+  .hero__grid {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+  }
+
+  @media (min-width: 64rem) {
+    .hero__grid {
+      grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+      gap: 3.5rem;
+    }
+  }
+
+  .hero__content {
+    max-width: 40rem;
+    /* Acima do fundo, e acima do palco no mobile, onde eles se sobrepõem. */
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero__title {
+    margin-top: 1.5rem;
+    font-size: var(--text-display-2xl);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  .hero__lead {
+    margin-top: 1.75rem;
+    max-width: 32rem;
+    font-size: var(--text-lead);
+    line-height: 1.6;
+    color: var(--c-ink-2);
+    text-wrap: pretty;
+  }
+
+  .hero__actions {
+    margin-top: 2.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 30rem) {
+    .hero__actions {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .hero__trust {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    color: var(--c-ink-3);
+  }
+
+  .hero__sep {
+    color: var(--c-line-strong);
+  }
+
+  /* ---- Objeto ---- */
+  .hero__object {
+    position: relative;
+    /* No mobile o objeto vem depois do texto e menor: a primeira tela
+       pertence à proposta de valor, não à decoração. */
+    order: 2;
+    max-width: 26rem;
+    margin-inline: auto;
+    width: 100%;
+  }
+
+  @media (min-width: 64rem) {
+    .hero__object {
+      order: 0;
+      max-width: none;
+      /* Sangra para fora da coluna: o objeto respira e a composição deixa
+         de parecer duas caixas lado a lado. Sem `scale` — quem enquadra é
+         a câmera, no renderizador; escalar por CSS só recortaria. */
+      margin-inline: -1rem -2rem;
+    }
+  }
+
+  /* ---- Dica de rolagem ---- */
+  .hero__cue {
+    margin-top: 3.5rem;
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    opacity: 1;
+    transition: opacity 500ms var(--ease-out-quint);
+  }
+
+  @media (min-width: 64rem) {
+    .hero__cue {
+      display: flex;
+    }
+  }
+
+  /* Some assim que a pessoa começa a rolar — a dica cumpriu a função. */
+  :global(html[data-scrolled='true']) .hero__cue {
+    opacity: 0;
+  }
+
+  .hero__cue-line {
+    width: 2.75rem;
+    height: 1px;
+    background: linear-gradient(90deg, var(--c-line-strong), transparent);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero__cue-line::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--c-brand-vivid);
+    animation: cue-sweep 2.4s var(--ease-in-out-soft) infinite;
+  }
+
+  .hero__cue-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-ink-3);
+  }
+
+  @keyframes cue-sweep {
+    0% {
+      transform: translateX(-100%);
+    }
+    60%,
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__cue-line::after {
+      animation: none;
+      opacity: 0;
+    }
+  }
+</style>

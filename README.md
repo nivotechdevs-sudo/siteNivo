@@ -7,11 +7,15 @@ com saída totalmente estática.
 
 | Métrica | Medido | Limite do Google |
 | --- | --- | --- |
-| LCP (pior página) | **0,83 s** | 2,50 s |
+| LCP (pior página) | **0,90 s** | 2,50 s |
 | CLS (todas as páginas) | **0,000** | 0,100 |
-| Peso da home | **78,4 KB** | — |
-| JavaScript | **1,3 KB** | — |
-| Requisições por página | **6** | — |
+| Peso da home | **86,6 KB** | — |
+| JavaScript na home | **8,2 KB** (inclui o objeto 3D) | — |
+| JavaScript nas demais | **1,3 KB** | — |
+
+A home carrega um objeto 3D em WebGL no hero. Ele custa **5,5 KB
+comprimidos** e é carregado depois da primeira pintura — ver
+[O objeto 3D do hero](#o-objeto-3d-do-hero).
 
 Reproduza com `npm run build && node tools/measure.mjs`.
 
@@ -22,10 +26,12 @@ Reproduza com `npm run build && node tools/measure.mjs`.
 1. [Começando](#começando)
 2. [O que falta configurar antes de publicar](#o-que-falta-configurar-antes-de-publicar)
 3. [Arquitetura do projeto](#arquitetura-do-projeto)
-4. [Onde mexer em cada coisa](#onde-mexer-em-cada-coisa)
-5. [Comandos](#comandos)
-6. [Como publicar](#como-publicar)
-7. [Depois do lançamento](#depois-do-lançamento)
+4. [O objeto 3D do hero](#o-objeto-3d-do-hero)
+5. [A cor da marca](#a-cor-da-marca)
+6. [Onde mexer em cada coisa](#onde-mexer-em-cada-coisa)
+7. [Comandos](#comandos)
+8. [Como publicar](#como-publicar)
+9. [Depois do lançamento](#depois-do-lançamento)
 
 ---
 
@@ -136,7 +142,9 @@ src/
 │
 ├─ pages/                rotas (o arquivo define a URL)
 ├─ content/blog/         posts em Markdown, validados por schema
-├─ scripts/app.ts        todo o JS do site (1,3 KB comprimido)
+├─ scripts/
+│  ├─ app.ts             JS de todas as páginas (1,3 KB comprimido)
+│  └─ hero3d.ts          renderizador WebGL do objeto do hero (5,5 KB)
 └─ styles/global.css     sistema de design completo
 
 tools/                   utilitários de build e qualidade
@@ -165,9 +173,77 @@ rodar o PageSpeed no nivotech.com.br e ver.
 | Framer Motion / GSAP | 40–120 KB | Transições CSS + `IntersectionObserver` |
 | Lenis / Locomotive | 15–30 KB | `scroll-behavior: smooth` nativo |
 | Biblioteca de ícones | 30–80 KB | 20 SVGs inline, ~200 bytes cada |
-| `web-vitals` | 2 KB | `PerformanceObserver` nativo |
+| **Three.js** | ~170 KB | Renderizador WebGL próprio, 5,5 KB |
 | reCAPTCHA | ~250 KB | Honeypot + validação de tempo |
 | Google Fonts (CDN) | DNS + TLS + bloqueio | Fontes auto-hospedadas e subsetadas |
+
+---
+
+## O objeto 3D do hero
+
+O hero traz uma torre torcida de patamares de vidro — a leitura literal do
+nome da marca: níveis que sobem, cada um girado em relação ao anterior.
+
+### Por que não Three.js
+
+O Three.js resolveria isso em 60 linhas e custaria **~170 KB comprimidos** —
+mais de duas vezes o peso de toda a home. Para uma agência cujo argumento
+comercial é performance, embarcar isso no hero seria contradizer o próprio
+discurso na primeira tela.
+
+Em vez disso, `src/scripts/hero3d.ts` tem:
+
+- **geradores de geometria** (retângulo arredondado extrudado com chanfro,
+  cilindro, esfera, toro, octaedro) que constroem a malha em tempo de
+  execução — nada de arquivo de modelo. O `.obj` exportado da cena original
+  tem 6,8 MB, 776 KB comprimido;
+- **um renderizador WebGL2** com o subconjunto que esta cena usa: difuso de
+  Lambert, especular de Blinn-Phong, fresnel de Schlick simplificado e
+  ambiente hemisférico, com ordenação de transparência.
+
+Resultado: **5,5 KB comprimidos**, 20× menos que a biblioteca, e o LCP
+subiu 70 ms.
+
+### Quando ele NÃO roda
+
+Todos os guardas correm **antes** do `import()`, então um aparelho que não
+deveria rodar a cena não baixa um byte do renderizador:
+
+| Condição | Motivo |
+| --- | --- |
+| Sem WebGL2 | nada a fazer |
+| `saveData` ligado | o usuário pediu para poupar dados |
+| Conexão 2G/3G | o renderizador competiria com o conteúdo |
+| `deviceMemory < 2 GB` | cena 3D em aparelho fraco trava a rolagem |
+| `prefers-reduced-motion` | desenha **um** quadro e para |
+| Fora da viewport | o laço para — GPU e bateria não são gastas no que ninguém vê |
+| Aba em segundo plano | idem |
+
+Sem o 3D, o hero fica com as camadas de luz em CSS e o texto. Não existe
+estado "quebrado" nem buraco vazio: o objeto é um acréscimo, não a base.
+
+---
+
+## A cor da marca
+
+A cor principal é **`hsl(243 95% 69%)` = `#6c65fb`**, um índigo vivo.
+
+Ela aparece na paleta como `--p-brand-500` e é a assinatura visual do site:
+o vidro do objeto 3D, os brilhos do hero, as bordas em gradiente, a barra de
+progresso e o ponto do item ativo no menu.
+
+**Por que existem dois tons em uso.** O `#6c65fb` dá 4,12:1 sobre o papel
+claro — abaixo dos 4,5:1 que a WCAG exige para texto normal. Então:
+
+| Uso | Token | Contraste |
+| --- | --- | --- |
+| Decoração (brilho, borda, 3D) | `--c-brand-vivid` → 500 | não se aplica |
+| Texto e links (tema claro) | `--c-brand` → 600 | 6,19:1 |
+| Botão preenchido | `--c-brand-solid` → 600 | 6,46:1 com branco |
+| Texto e links (tema escuro) | `--c-brand` → 300 | 9,00:1 |
+
+Assim a cor pedida domina a percepção do site sem que nada fique ilegível —
+e é por isso que a auditoria de acessibilidade continua em zero violações.
 
 ---
 
@@ -411,12 +487,13 @@ O rastreio de CTA já está implementado: todo botão tem `data-cta` e o
 
 ## Decisões que valem registrar
 
-**O instrumento na home mede as Core Web Vitals da própria página, ao vivo, no
-navegador de quem visita.** Sem portfólio publicado e sem depoimento, "fazemos
-sites rápidos" seria só mais uma promessa igual à de todo concorrente. Em vez
-de afirmar velocidade, o site mede — com a API do próprio navegador, na hora.
-É o único dado de resultado no site inteiro que não depende de informação que
-eu não tinha. Custa cerca de 1 KB de JavaScript.
+**Todas as interações de rolagem usam `animation-timeline` nativo onde
+existe.** A barra de progresso no cabeçalho, a linha que preenche a timeline
+do método e o parallax das camadas de fundo são resolvidos pelo navegador no
+compositor: nenhum listener de rolagem, nenhum trabalho por quadro na thread
+principal. É a diferença entre uma interação de rolagem que custa zero e uma
+que derruba o INP. A rotação do objeto 3D usa `IntersectionObserver` com
+vários limiares pelo mesmo motivo.
 
 **Nada acima da dobra tem animação de entrada.** Animar o hero atrasaria o LCP
 em centenas de milissegundos, porque o navegador pinta o elemento com
